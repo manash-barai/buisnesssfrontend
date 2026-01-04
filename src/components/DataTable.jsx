@@ -45,7 +45,7 @@ const DataTable = ({ columns, data }) => {
         <p className="text-center text-gray-500 py-4">No data available.</p>
       ) : (
         <table {...getTableProps()} className="min-w-full table-auto border rounded">
-          <thead className="bg-gray-100 text-gray-600">
+          <thead className="bg-gray-100 text-gray-600  sticky top-0">
             {headerGroups.map(headerGroup => (
               <tr {...headerGroup.getHeaderGroupProps()}>
                 {headerGroup.headers.map(column => (

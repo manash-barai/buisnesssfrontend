@@ -147,66 +147,66 @@ const AddSale = () => {
    */
 
   const handleItemChangeBlur = (index, e) => {
-  const { name, value } = e.target;
-  if (name !== 'quantity') return;
+    const { name, value } = e.target;
+    if (name !== 'quantity') return;
 
-  const items = [...saleItems];
-  const item = items[index];
-  const product = item.productDetails;
+    const items = [...saleItems];
+    const item = items[index];
+    const product = item.productDetails;
 
-  let baseValue;
+    let baseValue;
 
-  // ✅ Check if "+" exists and sum the numbers
-  if (value.includes("+")) {
-    baseValue = value
-      .split("+")
-      .map(num => parseFloat(num.trim()) || 0)
-      .reduce((acc, curr) => acc + curr, 0);
-  } else {
-    baseValue = parseFloat(value) || 0;
-  }
+    // ✅ Check if "+" exists and sum the numbers
+    if (value.includes("+")) {
+      baseValue = value
+        .split("+")
+        .map(num => parseFloat(num.trim()) || 0)
+        .reduce((acc, curr) => acc + curr, 0);
+    } else {
+      baseValue = parseFloat(value) || 0;
+    }
 
-  // ✅ Limit by available quantity
-  const available = item.lot?.pendingQuantity || Infinity;
-  if (baseValue > available) baseValue = available;
+    // ✅ Limit by available quantity
+    const available = item.lot?.pendingQuantity || Infinity;
+    if (baseValue > available) baseValue = available;
 
-  // ✅ Update item values
-  item.quantity = baseValue.toString();
+    // ✅ Update item values
+    item.quantity = baseValue.toString();
 
-  if (product?.unitCategory === 'KG') {
-    item.displayQuantity = (baseValue / 40).toString();
-  } else if (product?.unitCategory === 'bag') {
-    item.bagQuantity = baseValue.toString();
-  } else if (product?.unitCategory === 'tray') {
-    item.displayQuantity = (baseValue / 7).toString();
-  }
+    if (product?.unitCategory === 'KG') {
+      item.displayQuantity = (baseValue / 40).toString();
+    } else if (product?.unitCategory === 'bag') {
+      item.bagQuantity = baseValue.toString();
+    } else if (product?.unitCategory === 'tray') {
+      item.displayQuantity = (baseValue / 7).toString();
+    }
 
-  // ✅ Calculate totals
-  const quantity = parseFloat(item.quantity) || 0;
-  const unitPrice = parseFloat(item.unitPrice) || 0;
-  const discount = parseFloat(item.discount) || 0;
-  const total = quantity * unitPrice - discount;
-  const paidOnline = parseFloat(item.paidOnline) || 0;
-  const paidOffline = parseFloat(item.paidOffline) || 0;
-  const due = total - paidOnline - paidOffline;
+    // ✅ Calculate totals
+    const quantity = parseFloat(item.quantity) || 0;
+    const unitPrice = parseFloat(item.unitPrice) || 0;
+    const discount = parseFloat(item.discount) || 0;
+    const total = quantity * unitPrice - discount;
+    const paidOnline = parseFloat(item.paidOnline) || 0;
+    const paidOffline = parseFloat(item.paidOffline) || 0;
+    const due = total - paidOnline - paidOffline;
 
-  item.totalAmount = total.toFixed(2);
-  item.dueAmount = due.toFixed(2);
+    item.totalAmount = total.toFixed(2);
+    item.dueAmount = due.toFixed(2);
 
-  // ✅ Update Notes
-  if(value.includes("+")) item.lot && item.lot.latNumber && setNotes(item.lot?.latNumber + " :- " + value);
+    // ✅ Update Notes
+    if (value.includes("+")) item.lot && item.lot.latNumber && setNotes(item.lot?.latNumber + " :- " + value);
 
-  // ✅ Update state
-  items[index] = item;
-  setSaleItems(items);
-};
+    // ✅ Update state
+    items[index] = item;
+    setSaleItems(items);
+  };
 
   const handleItemChange = (index, e) => {
     const { name, value } = e.target;
     const items = [...saleItems];
     const item = items[index];
     const product = item.productDetails;
-    
+
     if (name === 'product') {
       const newProduct = products.find(p => p._id === value);
       items[index] = {
@@ -243,14 +243,14 @@ const AddSale = () => {
         let baseValue;
         if (name === 'quantity') {
           let values = value;
-           baseValue = String(values);
+          baseValue = String(values);
 
-         
+
         } else if (name === 'displayQuantity') {
-          
+
           baseValue = product.unitCategory === 'tray' ? enteredValue * 7 : enteredValue * 40;
         } else if (name === 'bagQuantity') {
-          baseValue = enteredValue/50;
+          baseValue = enteredValue / 50;
         }
 
         if (baseValue > available) {
@@ -262,7 +262,7 @@ const AddSale = () => {
         if (product.unitCategory === 'KG') {
           item.displayQuantity = (newQuantityInBase / 40).toString();
         } else if (product.unitCategory === 'bag') {
-          item.bagQuantity = (newQuantityInBase *50).toString();
+          item.bagQuantity = (newQuantityInBase * 50).toString();
         } else if (product.unitCategory === 'tray') {
           item.displayQuantity = (newQuantityInBase / 7).toString();
         }
@@ -275,11 +275,11 @@ const AddSale = () => {
       } else if (['unitPriceMon', 'unitPriceBag', 'unitPricePeti', 'unitPriceKG'].includes(name)) {
         let calculatedPrice;
         if (value.includes('+')) {
-            calculatedPrice = value.split('+').reduce((acc, curr) => acc + (parseFloat(curr) || 0), 0);
-            item[name] = calculatedPrice.toString();
+          calculatedPrice = value.split('+').reduce((acc, curr) => acc + (parseFloat(curr) || 0), 0);
+          item[name] = calculatedPrice.toString();
         } else {
-            calculatedPrice = parseFloat(value) || 0;
-            item[name] = value;
+          calculatedPrice = parseFloat(value) || 0;
+          item[name] = value;
         }
 
         const priceValue = calculatedPrice;
@@ -472,12 +472,14 @@ const AddSale = () => {
    * It distributes the payment among the sale items.
    */
   const handleTotalPaymentChange = (e) => {
-    let payment = parseFloat(e.target.value) || 0;
-    const grandTotal = saleItems.reduce((sum, item) => sum + parseFloat(item.totalAmount || 0), 0);
-
-    if (payment > grandTotal) {
-      payment = grandTotal;
+    const isValidNumber = /^[0-9]*\.?[0-9]*$/.test(e.target.value);
+    if (!isValidNumber) {
+      return;
     }
+    let payment = parseFloat(e.target.value) || 0;
+    // const grandTotal = saleItems.reduce((sum, item) => sum + parseFloat(item.totalAmount || 0), 0);
+
+
     setTotalPayment(payment);
 
     let remainingPayment = payment;
@@ -557,7 +559,7 @@ const AddSale = () => {
     };
 
     // Dispatch the action to create the sale
-   
+
     const resultAction = await dispatch(createSale(saleData));
     if (createSale.fulfilled.match(resultAction)) {
       const newSale = resultAction.payload;
@@ -573,7 +575,7 @@ const AddSale = () => {
           amount: item.totalAmount,
         })),
         total: grandTotal,
-        
+
         notes: notes,
         customerTotalDue: customerTotalDue,
         totalDue: customerTotalDue + totalDue,
@@ -662,7 +664,7 @@ const AddSale = () => {
               {saleItems.length >= 1 && (
                 <div className="bg-white rounded-lg shadow-md p-4">
                   <Totals
-                   
+
                     discountTotal={discountTotal}
                     setDiscountTotal={setDiscountTotal}
                     totalPayment={totalPayment}
@@ -715,7 +717,7 @@ const AddSale = () => {
       {showReceipt && billData && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
           <div className="bg-white p-4 rounded-lg">
-            <SalePrintPage billData={billData}  />
+            <SalePrintPage billData={billData} />
             <button
               onClick={() => {
                 setShowReceipt(false);

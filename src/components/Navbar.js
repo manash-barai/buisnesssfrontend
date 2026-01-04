@@ -22,7 +22,8 @@ const Navbar = () => {
   };
 
   return (
-    <nav className="bg-app-primary-700 p-4">
+   <nav className="bg-app-primary-700 p-4 sticky top-0 z-50">
+
       <div className="container mx-auto flex justify-between items-center max-w-7xl">
         <NavLink to="/" className="text-white text-xl font-bold">Business Tracker</NavLink>
         

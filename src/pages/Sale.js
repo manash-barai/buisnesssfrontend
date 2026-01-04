@@ -182,8 +182,8 @@ const Sale = () => {
             ))}
           </ul>
         )
-      },      
-            
+      },
+
       {
         Header: () => <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}><FaCalculator /> Total</div>,
         accessor: 'totalAmount',
@@ -192,19 +192,43 @@ const Sale = () => {
       {
         Header: () => <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}><FaCheckCircle /> Paid</div>,
         accessor: 'paid',
-        Cell: ({ row }) => `₹${formatNumber(
-          (row.original.paidAmountOnline || 0) +
-          (row.original.paidAmountOffline || 0)
-        )}`
+        Cell: ({ row }) => {
+          const paidAmount = row.original.paidAmount || 0;
+          const totalAmount = row.original.totalAmount || 0;
+          const isFullyPaid = paidAmount === totalAmount;
+
+          return (
+            <div className={`flex items-center justify-center p-1 rounded-md min-w-[80px] ${isFullyPaid
+                ? 'bg-green-100 border border-green-600 text-green-800'
+                : 'bg-gray-50 border border-gray-200 text-gray-600'
+              }`}>
+              <span className="font-medium">
+                ₹{formatNumber(paidAmount)}
+              </span>
+            </div>
+          );
+        },
+        width: 100
       },
       {
         Header: () => <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}><FaExclamationCircle /> Due</div>,
         accessor: 'dueAmount',
-        Cell: ({ value }) => (
-          <span className={value > 0 ? 'text-primary-600 font-medium' : ''}>
-            ₹{formatNumber(value)}
-          </span>
-        )
+        Cell: ({ value }) => {
+          const dueAmount = value || 0;
+          const hasDue = dueAmount > 0;
+
+          return (
+            <div className={`flex items-center justify-center p-1 rounded-md min-w-[80px] ${hasDue
+                ? 'bg-red-100 border-2 border-red-600 text-red-800'
+                : 'bg-gray-50 border border-gray-200 text-gray-600'
+              }`}>
+              <span className="font-medium">
+                ₹{formatNumber(dueAmount)}
+              </span>
+            </div>
+          );
+        },
+        width: 100
       },
       {
         Header: () => <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}><FaUserCircle /> Created By</div>,
@@ -316,7 +340,7 @@ const Sale = () => {
           <DataTable
             columns={columns}
             data={saleList}
-            className="border rounded-lg overflow-hidden shadow-sm"
+            className="border rounded-lg overflow-hidden shadow-sm "
           />
 
           <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">

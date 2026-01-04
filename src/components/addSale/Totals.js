@@ -27,15 +27,15 @@ const Totals = ({
         <div className="flex items-center justify-between">
           <label className="text-sm font-medium text-gray-600">Total Payment</label>
           <input
-            type="number"
+            type="text"
             value={totalPayment}
             onChange={handleTotalPaymentChange}
             className="w-1/2 p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-            step="0.01"
+            
           />
         </div>
         <div className="flex items-center justify-between">
-          <label className="text-sm font-medium text-gray-600">Total Discount</label>
+          <label className="text-sm font-medium text-gray-600">R/D </label>
           <input
             type="number"
             value={discountTotal}
