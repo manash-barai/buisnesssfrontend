@@ -77,6 +77,18 @@ const Receipt = React.forwardRef(({ billData }, ref) => {
         <span>Recent Bill</span>
         <span>{formatNumber(billData.total)}</span>
       </div>
+      <div className="flex justify-between text-[11px]">
+        <span>Payment</span>
+        <span>{formatNumber(billData.payment)}</span>
+      </div>
+      <div className="flex justify-between text-[11px]">
+        <span>R/D</span>
+        <span>{formatNumber(billData.rd)}</span>
+      </div>
+      <div className="flex justify-between text-[11px]">
+        <span>Total Payment</span>
+        <span>{formatNumber(billData.totalPayment)}</span>
+      </div>
       
       <div className="flex justify-between text-[11px]">
         <span>Total Due</span>

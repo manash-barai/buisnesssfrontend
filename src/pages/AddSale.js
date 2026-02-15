@@ -467,38 +467,45 @@ const AddSale = () => {
     setLastList({ index: null, lat: [] });
   };
 
+  useEffect(() => {
+    const payment = parseFloat(totalPayment) || 0;
+    const discount = parseFloat(discountTotal) || 0;
+    const effectivePayment = payment + discount;
+
+    let remainingPayment = effectivePayment;
+
+    const updatedSaleItems = saleItems.map(item => {
+        const newItem = { ...item };
+        const itemTotal = parseFloat(newItem.totalAmount) || 0;
+        const paidOnline = parseFloat(newItem.paidOnline) || 0;
+        const dueOnItem = itemTotal - paidOnline;
+
+        let paymentForItem = 0;
+        if (remainingPayment > 0 && dueOnItem > 0) {
+            paymentForItem = Math.min(remainingPayment, dueOnItem);
+            remainingPayment -= paymentForItem;
+        }
+        
+        newItem.paidOffline = paymentForItem.toFixed(2);
+        newItem.dueAmount = (dueOnItem - paymentForItem).toFixed(2);
+        return newItem;
+    });
+
+    if (JSON.stringify(updatedSaleItems) !== JSON.stringify(saleItems)) {
+        setSaleItems(updatedSaleItems);
+    }
+  }, [totalPayment, discountTotal, saleItems]);
+
   /**
    * This function is called when the total payment amount is changed.
    * It distributes the payment among the sale items.
    */
   const handleTotalPaymentChange = (e) => {
-    const isValidNumber = /^[0-9]*\.?[0-9]*$/.test(e.target.value);
-    if (!isValidNumber) {
-      return;
-    }
-    let payment = parseFloat(e.target.value) || 0;
-    // const grandTotal = saleItems.reduce((sum, item) => sum + parseFloat(item.totalAmount || 0), 0);
+    setTotalPayment(e.target.value);
+  };
 
-
-    setTotalPayment(payment);
-
-    let remainingPayment = payment;
-    const updatedSaleItems = saleItems.map((item) => {
-      const itemTotal = parseFloat(item.totalAmount) || 0;
-      if (remainingPayment >= itemTotal) {
-        item.paidOffline = itemTotal.toFixed(2);
-        remainingPayment -= itemTotal;
-      } else {
-        item.paidOffline = remainingPayment.toFixed(2);
-        remainingPayment = 0;
-      }
-      const paidOnline = parseFloat(item.paidOnline) || 0;
-      const paidOffline = parseFloat(item.paidOffline) || 0;
-      item.dueAmount = (itemTotal - paidOnline - paidOffline).toFixed(2);
-      return item;
-    });
-
-    setSaleItems(updatedSaleItems);
+  const handleDiscountChange = (e) => {
+    setDiscountTotal(e.target.value);
   };
 
   /**
@@ -555,7 +562,8 @@ const AddSale = () => {
       dagImage: dagImage,
       payment: totalPayment,
       SaleDue: totalDue,
-      totalDue: customerTotalDue + totalDue,
+      customerOldDue: customerTotalDue,
+      totalDue: finalTotalDue,
     };
 
     // Dispatch the action to create the sale
@@ -575,10 +583,12 @@ const AddSale = () => {
           amount: item.totalAmount,
         })),
         total: grandTotal,
-
+        payment: totalPayment,
+        rd: discountTotal,
+        totalPayment: (parseFloat(totalPayment) || 0) + (parseFloat(discountTotal) || 0),
         notes: notes,
         customerTotalDue: customerTotalDue,
-        totalDue: customerTotalDue + totalDue,
+        totalDue: finalTotalDue,
       };
       setBillData(billData);
       setShowReceipt(true);
@@ -593,6 +603,13 @@ const AddSale = () => {
   // Calculate the grand total and total due amount for the entire sale
   const grandTotal = saleItems.reduce((sum, item) => sum + parseFloat(item.totalAmount || 0), 0);
   const totalDue = saleItems.reduce((sum, item) => sum + parseFloat(item.dueAmount || 0), 0);
+
+  const totalPaidOnline = saleItems.reduce((sum, item) => sum + (parseFloat(item.paidOnline) || 0), 0);
+  const saleDueBeforeOfflinePayment = grandTotal - totalPaidOnline;
+  const effectivePayment = (parseFloat(totalPayment) || 0) + (parseFloat(discountTotal) || 0);
+  const paymentAppliedToSale = saleDueBeforeOfflinePayment - totalDue;
+  const extraPaymentForCustomer = effectivePayment - paymentAppliedToSale;
+  const finalTotalDue = (customerTotalDue - extraPaymentForCustomer) + totalDue;
 
   return (
     <div className="container mx-auto p-2 max-w-full bg-gray-50 min-h-screen">
@@ -664,13 +681,13 @@ const AddSale = () => {
               {saleItems.length >= 1 && (
                 <div className="bg-white rounded-lg shadow-md p-4">
                   <Totals
-
                     discountTotal={discountTotal}
-                    setDiscountTotal={setDiscountTotal}
+                    setDiscountTotal={handleDiscountChange}
                     totalPayment={totalPayment}
                     handleTotalPaymentChange={handleTotalPaymentChange}
                     totalDue={totalDue}
                     customerTotalDue={customerTotalDue}
+                    finalTotalDue={finalTotalDue}
                   />
                 </div>
               )}

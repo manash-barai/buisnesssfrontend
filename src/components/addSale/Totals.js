@@ -10,16 +10,19 @@ import React from 'react';
  */
 const Totals = ({
   // Data and state from the parent component
-  
   discountTotal,
   totalPayment,
   totalDue,
   customerTotalDue,
+  finalTotalDue,
 
   // Functions to handle changes
   setDiscountTotal,
   handleTotalPaymentChange,
 }) => {
+  const totalDueColor = finalTotalDue < 0 ? 'text-green-800' : 'text-red-800';
+  const totalDueFontWeight = finalTotalDue < 0 ? 'font-bold' : 'font-bold';
+
   return (
     <div className="bg-white p-4 rounded-lg shadow-md border border-gray-200">
       <h3 className="text-md font-semibold text-gray-700 mb-3">Final Totals & Payment</h3>
@@ -27,11 +30,11 @@ const Totals = ({
         <div className="flex items-center justify-between">
           <label className="text-sm font-medium text-gray-600">Total Payment</label>
           <input
-            type="text"
+            type="number"
             value={totalPayment}
             onChange={handleTotalPaymentChange}
             className="w-1/2 p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-            
+            step="0.01"
           />
         </div>
         <div className="flex items-center justify-between">
@@ -39,7 +42,7 @@ const Totals = ({
           <input
             type="number"
             value={discountTotal}
-            onChange={(e) => setDiscountTotal(e.target.value)}
+            onChange={setDiscountTotal}
             className="w-1/2 p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
             step="0.01"
           />
@@ -54,8 +57,8 @@ const Totals = ({
           <span className="text-md font-bold text-red-800">₹ {(totalDue).toFixed(2)}</span>
         </div>
         <div className="flex items-center justify-between">
-          <span className="text-sm font-medium text-red-600">Total Due</span>
-          <span className="text-md font-bold text-red-800">₹ {Number(customerTotalDue + Number(totalDue)).toFixed(2)}</span>
+          <span className={`text-sm font-medium ${totalDueColor.replace('800', '600')}`}>Total Due</span>
+          <span className={`text-md ${totalDueFontWeight} ${totalDueColor}`}>₹ {Number(finalTotalDue).toFixed(2)}</span>
         </div>
       </div>
     </div>

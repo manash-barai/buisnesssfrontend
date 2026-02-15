@@ -131,7 +131,7 @@ const Customer = () => {
     [handleUpdate]
   );
 
-  const isFormValid = newCustomer.name && newCustomer.phone && newCustomer.address;
+  const isFormValid = newCustomer.name && newCustomer.phone ;
 
   return (
     <div className="container mx-auto p-6 bg-white">
