@@ -21,6 +21,7 @@ const ReturnSale = () => {
     payment: 0,
     SaleDue: 0,
     totalDue: 0,
+    previousAmount:0
   });
 
   // Fetch sale
@@ -47,6 +48,7 @@ const ReturnSale = () => {
         paidAmountOffline: 0,
         dueAmount: p.totalAmount,
         totalBag: p.totalBag,
+        
       })),
       notes: saleDetails.notes,
       saleDate: saleDetails.saleDate?.split('T')[0],
@@ -55,6 +57,7 @@ const ReturnSale = () => {
       payment: saleDetails.paidAmount,
       SaleDue: saleDetails.dueAmount,
       totalDue: saleDetails.customer?.totalDue || 0,
+      previousAmount:saleDetails.totalAmount
     });
   }, [saleDetails]);
 
