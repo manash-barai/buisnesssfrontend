@@ -19,7 +19,8 @@ const TRAY_TO_PETI = 7;    // 7 Tray = 1 Peti
 const Product = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { data: products = [], loading, error } = useSelector((state) => state.product);
+
+  const { data: products = [], loading, error, currentPage, totalPages } = useSelector((state) => state.product);
   const [isClosing, setIsClosing] = useState(false);
   const [productUpdateId, setProductUpdateId] = useState(null);
   const [newProduct, setNewProduct] = useState({
@@ -87,10 +88,9 @@ const Product = () => {
   };
 
   // Function to calculate converted values for display
-   const getConvertedValues = (product) => {
+  const getConvertedValues = (product) => {
     const stockValue = parseFloat(product.currentStock) || 0;
-      console.log(product);
-    switch(product.unitCategory) {
+    switch (product.unitCategory) {
       case 'KG':
         return {
           converted: (stockValue / MON_TO_KG).toFixed(3) + ' Mon',
@@ -114,27 +114,26 @@ const Product = () => {
     }
   };
 
- const columns = React.useMemo(
+  const columns = React.useMemo(
     () => [
-      { 
-        Header: 'Name', 
+      {
+        Header: 'Name',
         accessor: 'name',
         Cell: ({ row }) => <span className="font-medium">{row.original.name}</span>
       },
-      { 
-        Header: 'Unit', 
+      {
+        Header: 'Unit',
         accessor: 'unitCategory',
         Cell: ({ row }) => {
           const unitMap = { 'KG': 'KG', 'bag': 'Bag', 'tray': 'Tray' };
           return unitMap[row.original.unitCategory] || row.original.unitCategory;
         }
       },
-      { 
+      {
         Header: 'Main Stock',
         accessor: 'currentStock',
         Cell: ({ row }) => {
           const converted = getConvertedValues(row.original);
-          console.log(converted)
           return (
             <div>
               <div>{row.original.currentStock || 0} {converted.unit}</div>
@@ -143,7 +142,7 @@ const Product = () => {
           );
         }
       },
-      { 
+      {
         Header: 'Bags',
         accessor: 'currentStock_bag',
         Cell: ({ row }) => row.original.currentStock_bag ? `${row.original.currentStock_bag} bags` : '-'
@@ -174,10 +173,17 @@ const Product = () => {
         </div>
       ) : (
         <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-          <DataTable 
-            columns={columns} 
-            data={products} 
+          <DataTable
+            columns={columns}
+            data={products}
             emptyMessage="No products found. Add your first product!"
+            currentPage={currentPage}
+            totalPages={totalPages}
+            isLoading={loading}
+            onLoadMore={(nextPage) => {
+
+              dispatch(getAllProducts({ page: nextPage, limit: 10 }));
+            }}
           />
         </div>
       )}

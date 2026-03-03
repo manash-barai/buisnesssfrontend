@@ -7,8 +7,10 @@ const createCustomer = async (customerData) => {
   return response.data;
 };
 
-const getAllCustomers = async () => {
-  const response = await axios.get(`${API_URL}/api/customers`);
+const getAllCustomers = async (filter) => {
+  const params = new URLSearchParams(filter).toString();
+
+  const response = await axios.get(`${API_URL}/api/customers?${params}`);
   return response.data;
 };
 
@@ -27,8 +29,8 @@ const deleteCustomerById = async (id) => {
   return response.data;
 };
 
-const getCustomerSaleList = async ({ customerId, page = 1 }) => {
-  const response = await axios.get(`${API_URL}/api/users/saledetailse/${customerId}?page=${page}`);
+const getCustomerSaleList = async ({ customerId, page = 1,limit=10 }) => {
+  const response = await axios.get(`${API_URL}/api/users/saledetailse/${customerId}?page=${page}&limit=${limit}`);
   return response.data;
 }
 

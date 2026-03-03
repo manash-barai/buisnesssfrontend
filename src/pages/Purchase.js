@@ -20,8 +20,8 @@ const TRAY_PER_PATI = 7; // 1 pati = 7 tray
 const Purchase = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { data: purchases = [], loading, error } = useSelector((state) => state.purchase);
-  const { data: products = [] } = useSelector((state) => state.product);
+  const { data: purchases = [], loading, error,currentPage, totalPages  } = useSelector((state) => state?.purchase);
+  const { data: products = []} = useSelector((state) => state?.product);
   const [isClosing, setIsClosing] = useState(false);
   const [purchaseUpdateId, setPurchaseUpdateId] = useState(null);
   const [unitCategory, setUnitCategory] = useState("KG");
@@ -84,7 +84,7 @@ const Purchase = () => {
   // Function to format price display based on unit category
   const formatPriceDisplaySpecial = (price, unitCategory) => {
 
-    console.log("unitCategory", unitCategory, price);
+
 
     switch (unitCategory) {
       case 'KG':
@@ -98,7 +98,7 @@ const Purchase = () => {
     }
   };
   const formatPriceDisplay = (price, productId) => {
-    console.log(productId)
+
     switch (productId) {
       case 'KG':
         return `₹${formatNumber(price)} / Kg`;
@@ -110,7 +110,7 @@ const Purchase = () => {
         return `₹${formatNumber(price)}`;
     }
   };
- 
+
   // Calculate totals
   const totalPaid = purchases.reduce((acc, purchase) =>
     acc + (purchase.paidAmount || []).reduce((sum, p) => sum + p.amount, 0), 0);
@@ -338,31 +338,31 @@ const Purchase = () => {
         )
       },
 
-      {
-        Header: () => <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}><FaUserCircle /> Created By</div>,
-        accessor: 'createdBy',
-        Cell: ({ value }) => (
-          <span className="font-medium">{value?.name || 'N/A'}</span>
-        )
-      },
-      {
-        Header: () => <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}><FaCogs /> Actions</div>,
-        accessor: 'actions',
-        Cell: ({ row }) => (
-          <div className="flex gap-3">
-            <button onClick={() => handleUpdate(row.original)} className="text-blue-600 hover:text-blue-800">
-              <FaEdit />
-            </button>
-            <button onClick={() => handleDelete(row.original._id)} className="text-primary-600 hover:text-primary-800">
-              <FaTrash />
-            </button>
-            <button onClick={() => handlePurchaseJourney(row.original._id)} className="text-green-600 hover:text-green-800">
-              <FaArrowRight />
-            </button>
-          </div>
-        ),
-        width: 120
-      }
+      // {
+      //   Header: () => <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}><FaUserCircle /> Created By</div>,
+      //   accessor: 'createdBy',
+      //   Cell: ({ value }) => (
+      //     <span className="font-medium">{value?.name || 'N/A'}</span>
+      //   )
+      // },
+      // {
+      //   Header: () => <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}><FaCogs /> Actions</div>,
+      //   accessor: 'actions',
+      //   Cell: ({ row }) => (
+      //     <div className="flex gap-3">
+      //       <button onClick={() => handleUpdate(row.original)} className="text-blue-600 hover:text-blue-800">
+      //         <FaEdit />
+      //       </button>
+      //       <button onClick={() => handleDelete(row.original._id)} className="text-primary-600 hover:text-primary-800">
+      //         <FaTrash />
+      //       </button>
+      //       <button onClick={() => handlePurchaseJourney(row.original._id)} className="text-green-600 hover:text-green-800">
+      //         <FaArrowRight />
+      //       </button>
+      //     </div>
+      //   ),
+      //   width: 120
+      // }
     ],
     [products]
   );
@@ -412,7 +412,7 @@ const Purchase = () => {
 
     setPurchasesList(structureData);
   }, [purchases]);
-
+  
   return (
     <div className="container mx-auto p-4 bg-white">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
@@ -436,7 +436,7 @@ const Purchase = () => {
       </div>
 
       {/* Filters */}
-      <div className="bg-gray-50 p-4 rounded-lg mb-6 grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="bg-gray-50 p-4 rounded-lg mb-6 grid grid-cols-1 md:grid-cols-4 gap-4 hidden">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Supplier</label>
           <input
@@ -490,18 +490,19 @@ const Purchase = () => {
       </div>
 
       {/* Data Table */}
-      {loading ? (
-        <div className="text-center py-8">Loading purchases...</div>
-      ) : error ? (
-        <div className="text-center text-primary-600 py-8">Error: {error}</div>
-      ) : (
+      
         <>
           <DataTable
             columns={columns}
             data={purchasesList}
-            className="border rounded-lg overflow-hidden shadow-sm"
-          />and
-
+            currentPage={currentPage}
+            totalPages={totalPages}
+            isLoading={loading}
+            onLoadMore={(nextPage) => {
+              
+              dispatch(getAllPurchases({ page: nextPage, limit: 10 }));
+            }}
+          />
           <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="bg-white p-4 rounded-lg shadow border">
               <h3 className="text-sm font-medium text-gray-500 mb-1">Total Purchases</h3>
@@ -517,7 +518,7 @@ const Purchase = () => {
             </div>
           </div>
         </>
-      )}
+      
 
       {/* Purchase Modal */}
       <PurchaseModal
@@ -549,7 +550,7 @@ const Purchase = () => {
             {/* History List */}
             <ul className="max-h-64 overflow-y-auto space-y-3 pr-2">
               {currentPayment.map((payment, index) => (
-                <li 
+                <li
                   key={index}
                   className="bg-gray-50 rounded-xl border flex flex-col gap-1 p-3 hover:shadow transition"
                 >

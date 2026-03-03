@@ -4,9 +4,9 @@ import productService from '../../services/productService';
 // Async Thunks
 export const getAllProducts = createAsyncThunk(
   'product/getAll',
-  async (_, thunkAPI) => {
+  async (filters, thunkAPI) => {
     try {
-      return await productService.getAllProducts();
+      return await productService.getAllProducts(filters);
     } catch (error) {
       const message =
         (error.response &&
@@ -106,6 +106,10 @@ export const adjustProductStock = createAsyncThunk(
 
 const initialState = {
   data: [],
+  currentPage:1, 
+  totalPages:1,
+  limit: 10,
+  totalProducts: 0,
   loading: false,
   error: null,
 };
@@ -121,7 +125,10 @@ const productSlice = createSlice({
       })
       .addCase(getAllProducts.fulfilled, (state, action) => {
         state.loading = false;
-        state.data = action.payload;
+        state.data = action.payload?.products;
+        state.currentPage=action.payload?.currentPage;
+        state.totalPages=action.payload?.totalPages;
+        state.totalProducts=action.payload?.totalProducts;
 
       })
       .addCase(getAllProducts.rejected, (state, action) => {
@@ -144,7 +151,6 @@ const productSlice = createSlice({
       })
       .addCase(getProductById.fulfilled, (state, action) => {
         state.loading = false;
-        console.log("get by id action", action.payload)
         state.data = [action.payload];
       })
       .addCase(getProductById.rejected, (state, action) => {
@@ -156,7 +162,6 @@ const productSlice = createSlice({
       })
       .addCase(updateProductById.fulfilled, (state, action) => {
         state.loading = false;
-        console.log("update action", action.payload)
         state.data = state.data.map((item) =>
           item._id === action.payload._doc._id ? action.payload._doc : item
         );

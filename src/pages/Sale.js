@@ -19,7 +19,7 @@ const TRAY_PER_PATI = 7; // 1 pati = 7 tray
 const Sale = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { data: sales = [], loading, error } = useSelector((state) => state.sale);
+  const { data: sales = [], loading, error, currentPage, totalPages } = useSelector((state) => state.sale);
   const { data: products = [] } = useSelector((state) => state.product);
   const { data: customers = [] } = useSelector((state) => state.customer);
   const [filterCustomer, setFilterCustomer] = useState('');
@@ -31,12 +31,10 @@ const Sale = () => {
   useEffect(() => {
     const formatData = sales.map(sale => ({
       ...sale,
-      productList: sale.products.map(
-        product => products.find(p => p._id === product.product)?.name
-      ) || [],
-      quantityList: sale.products.map(product => ({
+      productList: sale.products,
+      quantityList: sale.products?.map(product => ({
         quantity: product.quantity,
-        unitCategory: products.find(p => p._id === product.product)?.unitCategory,
+        unitCategory: product.product?.unitCategory,
         pricePerUnit: product.unitPrice
       })) || [],
 
@@ -102,7 +100,7 @@ const Sale = () => {
     new Date(b.saleDate) - new Date(a.saleDate));
 
   useEffect(() => {
-    dispatch(getAllSales({}));
+    dispatch(getAllSales({ page: currentPage, limit: 10 }));
   }, [dispatch]);
 
   // Filter handlers
@@ -149,11 +147,12 @@ const Sale = () => {
         accessor: 'productList',
         Cell: ({ value, row }) => (
           <ul className="list-disc list-inside">
-            {value.map((item, i) => (
-              <ol key={i}>
-                <span className="font-medium"> {item}</span>
+            {value.map((item, i) => {
+              console.log(item)
+             return <ol key={i}>
+                <span className="font-medium capitalize"> {item.product.name}</span>
               </ol>
-            ))}
+      })}
           </ul>
         )
       },
@@ -199,8 +198,8 @@ const Sale = () => {
 
           return (
             <div className={`flex items-center justify-center p-1 rounded-md min-w-[80px] ${isFullyPaid
-                ? 'bg-green-100 border border-green-600 text-green-800'
-                : 'bg-gray-50 border border-gray-200 text-gray-600'
+              ? 'bg-green-100 border border-green-600 text-green-800'
+              : 'bg-gray-50 border border-gray-200 text-gray-600'
               }`}>
               <span className="font-medium">
                 ₹{formatNumber(paidAmount)}
@@ -219,8 +218,8 @@ const Sale = () => {
 
           return (
             <div className={`flex items-center justify-center p-1 rounded-md min-w-[80px] ${hasDue
-                ? 'bg-red-100 border-2 border-red-600 text-red-800'
-                : 'bg-gray-50 border border-gray-200 text-gray-600'
+              ? 'bg-red-100 border-2 border-red-600 text-red-800'
+              : 'bg-gray-50 border border-gray-200 text-gray-600'
               }`}>
               <span className="font-medium">
                 ₹{formatNumber(dueAmount)}
@@ -277,7 +276,7 @@ const Sale = () => {
       </div>
 
       {/* Filters */}
-      <div className="bg-gray-50 p-4 rounded-lg mb-6 grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="bg-gray-50 p-4 rounded-lg mb-6 grid grid-cols-1 md:grid-cols-4 gap-4 hidden">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Customer</label>
           <input
@@ -341,6 +340,13 @@ const Sale = () => {
             columns={columns}
             data={saleList}
             className="border rounded-lg overflow-hidden shadow-sm "
+            currentPage={currentPage}
+            totalPages={totalPages}
+            isLoading={loading}
+            onLoadMore={(nextPage) => {
+
+              dispatch(getAllSales({ page: nextPage, limit: 10 }));
+            }}
           />
 
           <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">

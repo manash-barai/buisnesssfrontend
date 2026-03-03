@@ -13,16 +13,15 @@ import { FaLongArrowAltRight } from "react-icons/fa";
 
 const Supplier = () => {
   const dispatch = useDispatch();
-  const { data: suppliers = [], loading, error } = useSelector((state) => state.supplier);
+  const { data: suppliers = [], loading, error, currentPage, totalPages } = useSelector((state) => state.supplier);
   const [isClosing, setIsClosing] = useState(false);
   const [supplierUpdateId, setSupplierUpdateId] = useState(null);
   const [newSupplier, setNewSupplier] = useState({ name: '', contactPerson: '', phone: '', email: '', address: '' });
   const [showModal, setShowModal] = useState(false);
-  
+
   useEffect(() => {
-    dispatch(getAllSuppliers());
+    dispatch(getAllSuppliers({ page: currentPage, limit: 10 }));
   }, [dispatch]);
-  console.log("suppliers", suppliers);
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setNewSupplier({ ...newSupplier, [name]: value });
@@ -32,11 +31,11 @@ const Supplier = () => {
     if (supplierUpdateId) {
       dispatch(updateSupplierById({ id: supplierUpdateId, supplierData: newSupplier }));
       setSupplierUpdateId(null);
-      setNewSupplier({ name: '', phone: '',  address: '' });
+      setNewSupplier({ name: '', phone: '', address: '' });
       setShowModal(false);
     } else {
       dispatch(createSupplier(newSupplier));
-      setNewSupplier({ name: '',  phone: '',  address: '' });
+      setNewSupplier({ name: '', phone: '', address: '' });
       setShowModal(false);
     }
   };
@@ -64,12 +63,12 @@ const Supplier = () => {
   const columns = React.useMemo(
     () => [
       { Header: <div className="flex items-center gap-2"><FaUser /> Name</div>, accessor: 'name', ThClass: "justify-start" },
-    
+
       { Header: <div className="flex items-center gap-2"><FaPhone /> Phone</div>, accessor: 'phone', ThClass: "justify-start" },
 
-{ Header: <div className="flex items-center gap-2"><FaPhone /> Due </div>, accessor: 'totalDue', ThClass: "justify-start" },
+      { Header: <div className="flex items-center gap-2"><FaPhone /> Due </div>, accessor: 'totalDue', ThClass: "justify-start" },
 
-      
+
       { Header: <div className="flex items-center gap-2"><FaMapMarkerAlt /> Address</div>, accessor: 'address', ThClass: "justify-start" },
       {
         Header: 'Update',
@@ -101,7 +100,7 @@ const Supplier = () => {
         ThClass: "justify-center",
         Cell: ({ row }) => (
           <div className="flex gap-2 justify-center ">
-            <button  className="text-app-primary-600 hover:text-app-primary-800">
+            <button className="text-app-primary-600 hover:text-app-primary-800">
               <FaLongArrowAltRight />
             </button>
           </div>
@@ -111,7 +110,7 @@ const Supplier = () => {
     [handleDelete]
   );
 
-  const isFormValid = newSupplier.name && newSupplier.phone  && newSupplier.address;
+  const isFormValid = newSupplier.name && newSupplier.phone && newSupplier.address;
 
   return (
     <div className="container mx-auto p-6 bg-white">
@@ -130,7 +129,15 @@ const Supplier = () => {
       ) : error ? (
         <p className="text-center text-app-primary-500">Error: {error}</p>
       ) : (
-        <DataTable columns={columns} data={suppliers} />
+        <DataTable columns={columns} data={suppliers}
+          currentPage={currentPage}
+          totalPages={totalPages}
+          isLoading={loading}
+          onLoadMore={(nextPage) => {
+
+            dispatch(getAllSuppliers({ page: nextPage, limit: 10 }));
+          }}
+        />
       )}
 
       <SupplierModal

@@ -7,8 +7,9 @@ const createSale = async (saleData) => {
   return response.data;
 };
 
-const getAllSales = async () => {
-  const response = await axios.get(`${API_URL}/api/sales`);
+const getAllSales = async (filters) => {
+  const params = new URLSearchParams(filters).toString();
+  const response = await axios.get(`${API_URL}/api/sales?${params}`);
   return response.data;
 };
 

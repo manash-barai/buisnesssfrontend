@@ -4,9 +4,10 @@ import supplierService from '../../services/supplierService';
 // Async Thunks
 export const getAllSuppliers = createAsyncThunk(
   'supplier/getAll',
-  async (_, thunkAPI) => {
+  async (filters, thunkAPI) => {
+   
     try {
-      return await supplierService.getAllSuppliers();
+      return await supplierService.getAllSuppliers(filters);
     } catch (error) {
       const message =
         (error.response &&
@@ -89,6 +90,10 @@ export const deleteSupplierById = createAsyncThunk(
 
 const initialState = {
   data: [],
+  currentPage: 1,
+  totalPages: 1,
+  limit: 10,
+  totalSupplier: 0,
   loading: false,
   error: null,
 };
@@ -104,7 +109,26 @@ const supplierSlice = createSlice({
       })
       .addCase(getAllSuppliers.fulfilled, (state, action) => {
         state.loading = false;
-        state.data = action.payload;
+
+        // 1. Process incoming data (with optional field mapping)
+        const newData = action.payload?.suppliers?.map((supplier) => ({
+          ...supplier,
+          // Add custom property if needed
+          Price_PerUnitSpecial: supplier.pricePerUnit || 0,
+        })) || [];
+
+        // 2. Merge existing data with new data
+        const mergedData = [...state.data, ...newData];
+
+        // 3. De-duplicate using Map (ensures unique records by _id)
+        state.data = Array.from(
+          new Map(mergedData.map(item => [item._id, item])).values()
+        );
+
+        // 4. Update pagination metadata
+        state.currentPage = action.payload?.currentPage || 1;
+        state.totalPages = action.payload?.totalPages || 0;
+        state.totalSuppliers = action.payload?.totalSuppliers || 0;
       })
       .addCase(getAllSuppliers.rejected, (state, action) => {
         state.loading = false;

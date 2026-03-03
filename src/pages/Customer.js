@@ -14,24 +14,24 @@ import moment from 'moment';
 const Customer = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { data: customers = [], loading, error } = useSelector((state) => state.customer);
+  const { data: customers = [], loading, error, currentPage, totalPages } = useSelector((state) => state.customer);
   const [isClosing, setIsClosing] = useState(false);
   const [customerUpdateId, setCustomerUpdateId] = useState(null);
-  const [newCustomer, setNewCustomer] = useState({ 
-    name: '', 
-    phone: '', 
-    whatsApp: '', 
-    address: '', 
-    lastPayment: '', 
-    lastPaymentDate: '', 
-    totalDue: '', 
-    lastShop: '', 
-    notes: '' 
+  const [newCustomer, setNewCustomer] = useState({
+    name: '',
+    phone: '',
+    whatsApp: '',
+    address: '',
+    lastPayment: '',
+    lastPaymentDate: '',
+    totalDue: '',
+    lastShop: '',
+    notes: ''
   });
   const [showModal, setShowModal] = useState(false);
-  
+
   useEffect(() => {
-    dispatch(getAllCustomers());
+    dispatch(getAllCustomers({}));
   }, [dispatch]);
 
   const handleInputChange = (e) => {
@@ -60,20 +60,20 @@ const Customer = () => {
     }
   };
 
-  
+
 
   const handleUpdate = (customer) => {
     setCustomerUpdateId(customer._id);
-    setNewCustomer({ 
-      name: customer.name || '', 
-      phone: customer.phone || '', 
-      whatsApp: customer.whatsApp || '', 
-      address: customer.address || '', 
-      lastPayment: customer.lastPayment || '', 
-      lastPaymentDate: customer.lastPaymentDate ? moment(customer.lastPaymentDate).format('YYYY-MM-DD') : '', 
-      totalDue: customer.totalDue || '', 
-      lastShop: customer.lastShop || '', 
-      notes: customer.notes || '' 
+    setNewCustomer({
+      name: customer.name || '',
+      phone: customer.phone || '',
+      whatsApp: customer.whatsApp || '',
+      address: customer.address || '',
+      lastPayment: customer.lastPayment || '',
+      lastPaymentDate: customer.lastPaymentDate ? moment(customer.lastPaymentDate).format('YYYY-MM-DD') : '',
+      totalDue: customer.totalDue || '',
+      lastShop: customer.lastShop || '',
+      notes: customer.notes || ''
     });
     setShowModal(true);
   };
@@ -94,15 +94,15 @@ const Customer = () => {
       { Header: <div className="flex items-center gap-2"><FaPhone /> Phone</div>, accessor: 'phone', ThClass: "justify-start" },
       { Header: <div className="flex items-center gap-2"><FaWhatsapp /> WA</div>, accessor: 'whatsApp', ThClass: "justify-start" },
       { Header: <div className="flex items-center gap-2"><FaMapMarkerAlt /> Address</div>, accessor: 'address', ThClass: "justify-start" },
-     
-     
-      { 
-        Header: <div className="flex items-center gap-2"><FaMoneyBillWave />Total Due</div>, 
-        accessor: 'totalDue', 
+
+
+      {
+        Header: <div className="flex items-center gap-2"><FaMoneyBillWave />Total Due</div>,
+        accessor: 'totalDue',
         ThClass: "justify-start",
         Cell: ({ value }) => value ? <b>₹{value}</b> : 'N/A'
       },
-      
+
       {
         Header: 'Edit',
         accessor: 'Update',
@@ -131,7 +131,7 @@ const Customer = () => {
     [handleUpdate]
   );
 
-  const isFormValid = newCustomer.name && newCustomer.phone ;
+  const isFormValid = newCustomer.name && newCustomer.phone;
 
   return (
     <div className="container mx-auto p-6 bg-white">
@@ -150,7 +150,15 @@ const Customer = () => {
       ) : error ? (
         <p className="text-center text-app-primary-500">Error: {error}</p>
       ) : (
-        <DataTable columns={columns} data={customers} />
+        <DataTable columns={columns} data={customers}
+          currentPage={currentPage}
+          totalPages={totalPages}
+          isLoading={loading}
+          onLoadMore={(nextPage) => {
+
+            dispatch(getAllCustomers({ page: nextPage, limit: 10 }));
+          }}
+        />
       )}
 
       <CustomerModal

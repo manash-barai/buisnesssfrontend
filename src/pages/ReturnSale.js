@@ -162,7 +162,6 @@ const ReturnSale = () => {
 
           {formData.products.map((item, index) => {
             const latData = saleDetails.products[index].latId;
-            console.log('LAT DATA:', latData, item);
             return (
               <div key={index} className="border-b pb-4 mb-4">
 

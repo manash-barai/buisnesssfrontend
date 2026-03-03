@@ -89,6 +89,10 @@ export const deletePurchaseById = createAsyncThunk(
 
 const initialState = {
   data: [],
+  currentPage: 1,
+  totalPages: 1,
+  limit: 10,
+  totalPurchases: 0,
   loading: false,
   error: null,
 };
@@ -104,12 +108,25 @@ const purchaseSlice = createSlice({
       })
       .addCase(getAllPurchases.fulfilled, (state, action) => {
         state.loading = false;
-        console.log('Purchases fetched successfully:', action.payload);
-        state.data = action.payload.map((value) => ({
+
+        const newData = action.payload?.purchases.map((value) => ({
           ...value,
           Price_PerUnitSpecial: value.Price_PerUnit,
-        }));
+        })) || [];
+
+        // 🔥 Always merge with existing data
+        const mergedData = [...state.data, ...newData];
+
+        // 🔥 Remove duplicates based on _id
+        state.data = Array.from(
+          new Map(mergedData.map(item => [item._id, item])).values()
+        );
+
+        state.currentPage = action.payload.currentPage;
+        state.totalPages = action.payload.totalPages;
+        state.totalPurchases = action.payload.totalPurchases;
       })
+
       .addCase(getAllPurchases.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
@@ -119,7 +136,6 @@ const purchaseSlice = createSlice({
       })
       .addCase(createPurchase.fulfilled, (state, action) => {
         state.loading = false;
-        console.log('Purchase created successfully:', action.payload);
         state.data.unshift(action.payload[0]);
       })
 

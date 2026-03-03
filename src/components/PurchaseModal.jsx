@@ -1,7 +1,10 @@
 import React, { useEffect, useState } from "react";
 import { Rnd } from "react-rnd";
 import { useDispatch, useSelector } from "react-redux";
-import { getAllSuppliers } from "../features/supplier/supplierSlice";
+import {
+  createSupplier,
+  getAllSuppliers,
+} from "../features/supplier/supplierSlice";
 import { getAllProducts } from "../features/product/productSlice";
 
 // Conversion constants
@@ -56,6 +59,7 @@ const PurchaseModal = ({
   const { data: products = [] } = useSelector((state) => state.product);
 
   const [supplierSearch, setSupplierSearch] = useState("");
+  const [newSupplier, setNewSupplier] = useState(false);
   const [selectedSupplier, setSelectedSupplier] = useState(null);
   const [productSearch, setProductSearch] = useState("");
   const [selectedProduct, setSelectedProduct] = useState(null);
@@ -438,6 +442,20 @@ const PurchaseModal = ({
   if (!showModal) {
     return null;
   }
+  const addSupplier = async () => {
+    try {
+      const supplier = await dispatch(
+        createSupplier({ name: newSupplier })
+      ).unwrap(); // 🔥 this makes errors throw
+
+      handleSupplierSelect(supplier);
+      setNewSupplier("");
+     
+    } catch (error) {
+      // error is now your backend message
+      alert(error)
+    }
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
@@ -510,6 +528,27 @@ const PurchaseModal = ({
                     {supplier.name}
                   </button>
                 ))}
+                
+                
+                  <div className="flex items-center max-w-sm">
+                    <input
+                      type="text"
+                      value={newSupplier}
+                      onChange={(e) => setNewSupplier(e.target.value)}
+                      placeholder="Enter supplier name"
+                      className="flex-1 px-4 py-1 border border-gray-300  rounded-l-lg
+                          focus:outline-none   transition duration-200 border-r-0"
+                    />
+                    <button
+                      onClick={addSupplier}
+                      className="px-5 py-1 bg-blue-950 text-white font-medium 
+                         hover:bg-blue-700 
+                        active:scale-95 transition duration-200 shadow-md rounded-r-lg "
+                    >
+                      OK
+                    </button>
+                  </div>
+                
               </div>
             </div>
 
@@ -628,8 +667,8 @@ const PurchaseModal = ({
                       inputMode="decimal"
                       value={convertedValues.tray}
                       onChange={(e) => {
-                        if(/^\d*\.?\d*$/.test(e.target.value))
-                        handleUnitConversion("tray", e.target.value)
+                        if (/^\d*\.?\d*$/.test(e.target.value))
+                          handleUnitConversion("tray", e.target.value);
                       }}
                       placeholder="Quantity in tray"
                       className="w-full border px-3 py-2 rounded"
@@ -645,8 +684,8 @@ const PurchaseModal = ({
                       inputMode="decimal"
                       value={convertedValues.pati}
                       onChange={(e) => {
-                        if(/^\d*\.?\d*$/.test(e.target.value))    
-                        handleUnitConversion("pati", e.target.value)
+                        if (/^\d*\.?\d*$/.test(e.target.value))
+                          handleUnitConversion("pati", e.target.value);
                       }}
                       placeholder="Quantity in pati"
                       className="w-full border px-3 py-2 rounded"
@@ -666,7 +705,6 @@ const PurchaseModal = ({
                           handlePriceInputChange(e, "pricePerPati");
                         }
                       }}
-                      
                       placeholder="Price per pati"
                       className="w-full border px-3 py-2 rounded"
                       disabled={!selectedProduct}

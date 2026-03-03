@@ -7,8 +7,9 @@ const createSupplier = async (supplierData) => {
   return response.data;
 };
 
-const getAllSuppliers = async () => {
-  const response = await axios.get(`${API_URL}/api/suppliers`);
+const getAllSuppliers = async (filters) => {
+  const params = new URLSearchParams(filters).toString();
+  const response = await axios.get(`${API_URL}/api/suppliers?${params}`);
   return response.data;
 };
 

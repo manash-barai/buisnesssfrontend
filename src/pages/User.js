@@ -133,7 +133,6 @@ const User = () => {
   );
 
   const isFormValid = newUser.name && newUser.role && newUser.phone && newUser.email && newUser.address && (userUpdateId ? true : newUser.password);
-  console.log('isFormValid:', isFormValid,newUser);
 
   return (
     <div className="container mx-auto p-6 bg-white">

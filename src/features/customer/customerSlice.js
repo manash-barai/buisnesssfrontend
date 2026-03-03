@@ -4,9 +4,9 @@ import customerService from '../../services/customerService';
 // Async Thunks
 export const getAllCustomers = createAsyncThunk(
   'customer/getAll',
-  async (_, thunkAPI) => {
+  async (filter, thunkAPI) => {
     try {
-      return await customerService.getAllCustomers();
+      return await customerService.getAllCustomers(filter);
     } catch (error) {
       const message =
         (error.response &&
@@ -89,9 +89,9 @@ export const deleteCustomerById = createAsyncThunk(
 
 export const getCustomerSaleList = createAsyncThunk(
   'customer/getSaleList',
-  async ({ customerId, page }, thunkAPI) => {
+  async ({ customerId, page, limit = 10 }, thunkAPI) => {
     try {
-      return await customerService.getCustomerSaleList({ customerId, page });
+      return await customerService.getCustomerSaleList({ customerId, page, limit });
     } catch (error) {
       const message =
         (error.response &&
@@ -106,7 +106,17 @@ export const getCustomerSaleList = createAsyncThunk(
 
 const initialState = {
   data: [],
-  customareSaleList: [],
+  customareSaleList: {
+    data: [],
+    currentPage: 1,
+    totalPages: 1,
+    limit: 10,
+    totalSaleLists: 0,
+  },
+  currentPage: 1,
+  totalPages: 1,
+  limit: 10,
+  totalCustomares: 0,
   totalDue: 0,
   pagination: {},
   loading: false,
@@ -124,7 +134,22 @@ const customerSlice = createSlice({
       })
       .addCase(getAllCustomers.fulfilled, (state, action) => {
         state.loading = false;
-        state.data = action.payload;
+
+        // 1. Extract the array from the payload (default to empty array)
+        const newData = action.payload?.customers || [];
+
+        // 2. Merge with existing data in state
+        const mergedData = [...state.data, ...newData];
+
+        // 3. Remove duplicates based on _id (Map trick)
+        state.data = Array.from(
+          new Map(mergedData.map(item => [item._id, item])).values()
+        );
+
+        // 4. Store the metadata for the UI
+        state.currentPage = action.payload.currentPage;
+        state.totalPages = action.payload.totalPages;
+        state.totalCustomers = action.payload.totalCustomers;
       })
       .addCase(getAllCustomers.rejected, (state, action) => {
         state.loading = false;
@@ -181,9 +206,24 @@ const customerSlice = createSlice({
       })
       .addCase(getCustomerSaleList.fulfilled, (state, action) => {
         state.loading = false;
-        state.customareSaleList = action.payload.ledger;
-        state.totalDue = action.payload.totalDue;
-        state.pagination = action.payload.pagination;
+
+        // 1. Extract ledger array (default to empty if null)
+        const newLedger = action.payload?.ledger || [];
+
+        // 2. Merge with existing ledger data for pagination/infinite scroll
+        const mergedLedger = [...state.customareSaleList.data, ...newLedger];
+
+        // 3. Remove duplicates based on refId (since ledger items use refId)
+        state.customareSaleList.data = Array.from(
+          new Map(mergedLedger.map(item => [item.refId, item])).values()
+        );
+
+        // 4. Update state with top-level payload keys
+        state.customareSaleList.totalDue = action.payload.totalDue;
+        state.customareSaleList.currentPage = action.payload.currentPage;
+        state.customareSaleList.totalPages = action.payload.totalPages;
+        state.customareSaleList.totalSaleLists = action.payload.totalRecords; // total length of ledger
+        state.customareSaleList.openingBalance = action.payload.openingBalance;
       })
       .addCase(getCustomerSaleList.rejected, (state, action) => {
         state.loading = false;

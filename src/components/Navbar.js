@@ -34,7 +34,7 @@ const Navbar = () => {
               
               <li><NavLink to="/customers" className="text-gray-300 hover:text-white" style={({ isActive }) => isActive ? activeLinkStyle : undefined}>Customers</NavLink></li>
               <li><NavLink to="/sales" className="text-gray-300 hover:text-white" style={({ isActive }) => isActive ? activeLinkStyle : undefined}>Sales</NavLink></li>
- <li><NavLink to="/returns" className="text-gray-300 hover:text-white" style={({ isActive }) => isActive ? activeLinkStyle : undefined}>Returns</NavLink></li>
+ {/* <li><NavLink to="/returns" className="text-gray-300 hover:text-white" style={({ isActive }) => isActive ? activeLinkStyle : undefined}>Returns</NavLink></li> */}
               <li><NavLink to="/products" className="text-gray-300 hover:text-white" style={({ isActive }) => isActive ? activeLinkStyle : undefined}>Products</NavLink></li>
               <li><NavLink to="/purchases" className="text-gray-300 hover:text-white" style={({ isActive }) => isActive ? activeLinkStyle : undefined}>Purchases</NavLink></li>
               

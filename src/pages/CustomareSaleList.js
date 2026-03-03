@@ -10,11 +10,11 @@ const CustomerSaleList = () => {
     const dispatch = useDispatch();
     const { customerId } = useParams();
     const { name } = useParams();
-    const [currentPage, setCurrentPage] = useState(1);
+
 
     // Redux State
-    const { customareSaleList, totalDue, pagination, loading, error } = useSelector((state) => state.customer);
-    
+    const { customareSaleList, loading, error } = useSelector((state) => state.customer);
+    const { currentPage, totalPages, data, totalDue } = customareSaleList;
     // Local State for Payment Form
     const [showPaymentModal, setShowPaymentModal] = useState(false);
     const [paymentAmount, setPaymentAmount] = useState('');
@@ -25,11 +25,11 @@ const CustomerSaleList = () => {
 
     // API Mutation
     const [salePayment, { isLoading: isPaymentLoading, isSuccess: isPaymentSuccess, isError: isPaymentError, error: paymentError }] = useSalePaymentMutation();
-    
+
     // Fetch Data & Handle Payment Success
     useEffect(() => {
         // Fetch list on mount or page change or after successful payment
-        dispatch(getCustomerSaleList({ customerId, page: currentPage }));
+        dispatch(getCustomerSaleList({ customerId, page: currentPage, limit: 10 }));
 
         // If payment was successful, close modal and reset form
         if (isPaymentSuccess) {
@@ -46,12 +46,19 @@ const CustomerSaleList = () => {
         if (!paymentAmount) return;
 
         // Construct Payload exactly as requested
+        // 1️⃣ Grab the exact current time (e.g., "16:45:30.000Z")
+        const currentTime = new Date().toISOString().split('T')[1];
+
+        // 2️⃣ Combine the date from your React state ("YYYY-MM-DD") with the time
+        const exactDateTime = `${paymentDate}T${currentTime}`;
+
+        // 3️⃣ Create your payload with the new exact string
         const payload = {
-            customer: customerId, // Using 'customer' key as per your JSON
+            customer: customerId,
             amount: Number(paymentAmount),
             rd: Number(rdAmount),
             method: paymentMethod,
-            paymentDate: paymentDate,
+            paymentDate: exactDateTime, // 🔥 Changed this line!
             notes: paymentNotes
         };
 
@@ -64,9 +71,7 @@ const CustomerSaleList = () => {
         }
     };
 
-    const handlePageChange = (newPage) => {
-        setCurrentPage(newPage);
-    };
+
 
     // Columns Definition
     const columns = useMemo(
@@ -92,7 +97,7 @@ const CustomerSaleList = () => {
                         )}
                         {/* Show notes if available for payments */}
                         {row.original.notes && (
-                             <span className="text-xs text-gray-500 block italic">"{row.original.notes}"</span>
+                            <span className="text-xs text-gray-500 block italic">"{row.original.notes}"</span>
                         )}
                     </div>
                 )
@@ -136,7 +141,7 @@ const CustomerSaleList = () => {
         <div className="container mx-auto p-4 max-w-5xl relative min-h-screen">
 
             {/* --- FLOATING PAYMENT BUTTON (Left Side) --- */}
-            <button 
+            <button
                 onClick={() => setShowPaymentModal(true)}
                 className="fixed left-0 top-1/2 transform -translate-y-1/2 bg-green-600 hover:bg-green-700 text-white p-4 rounded-r-lg shadow-xl z-40 flex flex-col items-center gap-2 transition-all duration-300 hover:pl-6"
                 title="Add Payment"
@@ -152,7 +157,7 @@ const CustomerSaleList = () => {
                     <h1 className="text-2xl font-bold text-gray-800 flex items-center gap-2 capitalize">
                         {name || 'Customer Ledger'}
                     </h1>
-                    <p className="text-sm text-gray-500">ID: {customerId}</p>
+
                 </div>
                 <div className="text-right">
                     <p className="text-gray-500 text-sm font-semibold uppercase tracking-wide">Total Due</p>
@@ -166,7 +171,7 @@ const CustomerSaleList = () => {
             {showPaymentModal && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm">
                     <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg overflow-hidden transform transition-all scale-100">
-                        
+
                         {/* Modal Header */}
                         <div className="bg-green-600 p-4 flex justify-between items-center text-white">
                             <h3 className="text-xl font-bold flex items-center gap-2">
@@ -180,7 +185,7 @@ const CustomerSaleList = () => {
                         {/* Modal Body */}
                         <div className="p-6">
                             <form onSubmit={handlePaymentSubmit} className="space-y-4">
-                                
+
                                 {/* Amount & RD Row */}
                                 <div className="flex gap-4">
                                     <div className="w-1/2">
@@ -213,8 +218,8 @@ const CustomerSaleList = () => {
                                 <div className="flex gap-4">
                                     <div className="w-1/2">
                                         <label className="block text-sm font-medium text-gray-700 mb-1">Date</label>
-                                        <input 
-                                            type="date" 
+                                        <input
+                                            type="date"
                                             value={paymentDate}
                                             onChange={(e) => setPaymentDate(e.target.value)}
                                             className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 outline-none"
@@ -222,8 +227,8 @@ const CustomerSaleList = () => {
                                     </div>
                                     <div className="w-1/2">
                                         <label className="block text-sm font-medium text-gray-700 mb-1">Method</label>
-                                        <select 
-                                            value={paymentMethod} 
+                                        <select
+                                            value={paymentMethod}
                                             onChange={(e) => setPaymentMethod(e.target.value)}
                                             className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 outline-none"
                                         >
@@ -237,9 +242,9 @@ const CustomerSaleList = () => {
                                 {/* Notes */}
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-2">
-                                        <FaStickyNote className="text-gray-400"/> Notes
+                                        <FaStickyNote className="text-gray-400" /> Notes
                                     </label>
-                                    <textarea 
+                                    <textarea
                                         rows="2"
                                         value={paymentNotes}
                                         onChange={(e) => setPaymentNotes(e.target.value)}
@@ -256,7 +261,7 @@ const CustomerSaleList = () => {
                                 >
                                     {isPaymentLoading ? 'Processing...' : <><FaCheckCircle /> Confirm Payment</>}
                                 </button>
-                                
+
                                 {isPaymentError && (
                                     <p className="text-red-500 text-sm text-center bg-red-50 p-2 rounded">
                                         {paymentError.data?.message || 'Payment Failed'}
@@ -275,30 +280,21 @@ const CustomerSaleList = () => {
                 ) : error ? (
                     <div className="p-10 text-center text-red-500">Error: {error}</div>
                 ) : (
-                    <DataTable columns={columns} data={customareSaleList} />
+                    <DataTable columns={columns} data={data}
+
+                        currentPage={currentPage}
+                        totalPages={totalPages}
+                        isLoading={loading}
+                        onLoadMore={(nextPage) => {
+
+                            dispatch(getCustomerSaleList({ customerId, page: nextPage, limit: 10 }));
+                        }}
+
+                    />
                 )}
             </div>
 
-            {/* --- PAGINATION --- */}
-            <div className="flex justify-center items-center mt-4 pb-10">
-                <button
-                    onClick={() => handlePageChange(currentPage - 1)}
-                    disabled={!pagination.page || pagination.page <= 1}
-                    className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-l disabled:opacity-50"
-                >
-                    Previous
-                </button>
-                <span className="py-2 px-4 bg-gray-200 text-gray-700 border-x border-gray-300">
-                    Page {pagination.page} of {pagination.totalPages}
-                </span>
-                <button
-                    onClick={() => handlePageChange(currentPage + 1)}
-                    disabled={!pagination.page || pagination.page >= pagination.totalPages}
-                    className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-r disabled:opacity-50"
-                >
-                    Next
-                </button>
-            </div>
+
         </div>
     );
 };

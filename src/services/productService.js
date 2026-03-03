@@ -7,8 +7,9 @@ const createProduct = async (productData) => {
   return response.data;
 };
 
-const getAllProducts = async () => {
-  const response = await axios.get(`${API_URL}/api/products`);
+const getAllProducts = async (filters) => {
+  const params = new URLSearchParams(filters).toString();
+  const response = await axios.get(`${API_URL}/api/products?${params}`);
   return response.data;
 };
 

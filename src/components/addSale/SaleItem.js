@@ -28,7 +28,7 @@ const SaleItem = ({
   handleRemoveItem,
 }) => {
 
-  console.log('Rendering SaleItem:', item.lot);
+  
   return (
     <div key={index} className="bg-white p-4 rounded-lg shadow-md border border-gray-200 relative">
       <div className="flex justify-between items-start mb-3">

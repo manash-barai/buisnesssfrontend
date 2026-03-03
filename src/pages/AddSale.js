@@ -156,7 +156,7 @@ const AddSale = () => {
 
     let baseValue;
 
-    // ✅ Check if "+" exists and sum the numbers
+    //  Check if "+" exists and sum the numbers
     if (value.includes("+")) {
       baseValue = value
         .split("+")
@@ -350,16 +350,15 @@ const AddSale = () => {
     debounce(async (index, value) => {
       const product = products.find((p) => p._id === value);
       if (!product) return;
-
+      
       try {
-        const getLatList = await axios.post(`${process.env.REACT_APP_BASE_URL}/api/lats`, {
-          page: 1,
-          limit: 20,
-          pendingQuantity_ne: 0,
-          product: value,
-        });
+        const page = 1;
+        const limit = 10;
 
-        const formattedData = getLatList.data.map((item) => ({
+        const getLatList = await axios.get(
+          `${process.env.REACT_APP_BASE_URL}/api/lats?id=${product._id}&page=${page}&limit=${limit}`
+        );
+        const formattedData = getLatList.data?.lats?.map((item) => ({
           _id: item._id,
           latNumber: item.latNumber,
           supplier: item.supplier?.name || 'N/A',
@@ -475,24 +474,24 @@ const AddSale = () => {
     let remainingPayment = effectivePayment;
 
     const updatedSaleItems = saleItems.map(item => {
-        const newItem = { ...item };
-        const itemTotal = parseFloat(newItem.totalAmount) || 0;
-        const paidOnline = parseFloat(newItem.paidOnline) || 0;
-        const dueOnItem = itemTotal - paidOnline;
+      const newItem = { ...item };
+      const itemTotal = parseFloat(newItem.totalAmount) || 0;
+      const paidOnline = parseFloat(newItem.paidOnline) || 0;
+      const dueOnItem = itemTotal - paidOnline;
 
-        let paymentForItem = 0;
-        if (remainingPayment > 0 && dueOnItem > 0) {
-            paymentForItem = Math.min(remainingPayment, dueOnItem);
-            remainingPayment -= paymentForItem;
-        }
-        
-        newItem.paidOffline = paymentForItem.toFixed(2);
-        newItem.dueAmount = (dueOnItem - paymentForItem).toFixed(2);
-        return newItem;
+      let paymentForItem = 0;
+      if (remainingPayment > 0 && dueOnItem > 0) {
+        paymentForItem = Math.min(remainingPayment, dueOnItem);
+        remainingPayment -= paymentForItem;
+      }
+
+      newItem.paidOffline = paymentForItem.toFixed(2);
+      newItem.dueAmount = (dueOnItem - paymentForItem).toFixed(2);
+      return newItem;
     });
 
     if (JSON.stringify(updatedSaleItems) !== JSON.stringify(saleItems)) {
-        setSaleItems(updatedSaleItems);
+      setSaleItems(updatedSaleItems);
     }
   }, [totalPayment, discountTotal, saleItems]);
 
@@ -527,7 +526,6 @@ const AddSale = () => {
    */
   const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("Form submitted");
 
     let finalCustomerId = customerId;
 
