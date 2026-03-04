@@ -4,6 +4,7 @@ import { useParams } from 'react-router-dom';
 import { getCustomerSaleList } from '../features/customer/customerSlice';
 import { useSalePaymentMutation } from '../features/api/apiSlice';
 import DataTable from '../components/DataTable';
+import {clearcustomareSaleLists} from '../features/customer/customerSlice'
 import { FaCalendarAlt, FaFileInvoice, FaRupeeSign, FaHistory, FaArrowDown, FaTimes, FaMoneyBillWave, FaStickyNote, FaCheckCircle } from 'react-icons/fa';
 
 const CustomerSaleList = () => {
@@ -61,11 +62,12 @@ const CustomerSaleList = () => {
             paymentDate: exactDateTime, // 🔥 Changed this line!
             notes: paymentNotes
         };
-
+        dispatch(clearcustomareSaleLists())
         try {
             // Passing customerId as the second arg if your mutation definition needs it for the URL 
             // Assuming your mutation is defined like: query: (data) => ({ url: `salePayment/${data.customer}`, method: 'POST', body: data })
             await salePayment(payload).unwrap();
+            await  dispatch(getCustomerSaleList({ customerId, page: 1, limit: 10 }));
         } catch (err) {
             console.error('Failed to make payment: ', err);
         }
@@ -90,15 +92,13 @@ const CustomerSaleList = () => {
                 Header: () => <div className="flex items-center gap-2"><FaFileInvoice /> Description</div>,
                 accessor: 'label',
                 Cell: ({ row }) => (
-                    <div>
-                        <span className="font-semibold block">{row.original.label}</span>
-                        {row.original.refId && (
+                    <div className='bg-yellow-500 500 text-xs text-zinc-800'>
+                        {/* <span className="font-semibold block">{row.original.label}</span> */}
+                        {/* {row.original.refId && (
                             <span className="text-xs text-gray-400">Ref: {row.original.refId.slice(-6)}</span>
-                        )}
+                        )} */}
                         {/* Show notes if available for payments */}
-                        {row.original.notes && (
-                            <span className="text-xs text-gray-500 block italic">"{row.original.notes}"</span>
-                        )}
+                      { row.original?.notes}
                     </div>
                 )
             },
@@ -275,9 +275,7 @@ const CustomerSaleList = () => {
 
             {/* --- DATA TABLE --- */}
             <div className="bg-white shadow-lg rounded-lg overflow-hidden">
-                {loading ? (
-                    <div className="p-10 text-center text-gray-500 animate-pulse">Loading Ledger...</div>
-                ) : error ? (
+                { error ? (
                     <div className="p-10 text-center text-red-500">Error: {error}</div>
                 ) : (
                     <DataTable columns={columns} data={data}

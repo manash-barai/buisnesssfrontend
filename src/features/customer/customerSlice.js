@@ -126,7 +126,17 @@ const initialState = {
 const customerSlice = createSlice({
   name: 'customer',
   initialState,
-  reducers: {},
+  reducers: {
+    clearcustomareSaleLists: (state) => {
+      state.customareSaleList = {
+        data: [],
+        currentPage: 1,
+        totalPages: 1,
+        limit: 10,
+        totalSaleLists: 0,
+      };
+    },
+  },
   extraReducers: (builder) => {
     builder
       .addCase(getAllCustomers.pending, (state) => {
@@ -231,5 +241,6 @@ const customerSlice = createSlice({
       });
   },
 });
+export const { clearcustomareSaleLists } = customerSlice.actions;
 
 export default customerSlice.reducer;

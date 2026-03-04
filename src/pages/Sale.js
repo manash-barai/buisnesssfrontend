@@ -330,9 +330,7 @@ const Sale = () => {
       </div>
 
       {/* Data Table */}
-      {loading ? (
-        <div className="text-center py-8">Loading sales...</div>
-      ) : error ? (
+      { error ? (
         <div className="text-center text-primary-600 py-8">Error: {error}</div>
       ) : (
         <>
