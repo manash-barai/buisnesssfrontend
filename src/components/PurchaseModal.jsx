@@ -59,7 +59,7 @@ const PurchaseModal = ({
   const { data: products = [] } = useSelector((state) => state.product);
 
   const [supplierSearch, setSupplierSearch] = useState("");
-  const [newSupplier, setNewSupplier] = useState(false);
+  const [newSupplier, setNewSupplier] = useState();
   const [selectedSupplier, setSelectedSupplier] = useState(null);
   const [productSearch, setProductSearch] = useState("");
   const [selectedProduct, setSelectedProduct] = useState(null);
