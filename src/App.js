@@ -14,6 +14,7 @@ import CustomerJourney from './components/CustomerJourney';
 import Supplier from './pages/Supplier';
 import LoginPage from './pages/LoginPage';
 import AddSale from './pages/AddSale';
+import EditSale from './pages/EditSale'; // Import EditSale
 import CustomerSales from './pages/CustomerSales';
 import CustomareSaleList from './pages/CustomareSaleList';
 import ReturnSale from './pages/ReturnSale'; // Import the new component
@@ -34,7 +35,9 @@ function App() {
         <Route path="/customers" element={<PrivateRoute><Customer /></PrivateRoute>} />
         <Route path="/sales" element={<PrivateRoute><Sale /></PrivateRoute>} />
         <Route path="/sales/new" element={<PrivateRoute><AddSale /></PrivateRoute>} />
-        <Route path="/sales/:id/return" element={<PrivateRoute><ReturnSale /></PrivateRoute>} /> {/* New route for returning/editing a sale */}
+        <Route path="/sales/:id/return" element={<PrivateRoute><ReturnSale /></PrivateRoute>} />
+        <Route path="/sales/edit/:id" element={<PrivateRoute><EditSale /></PrivateRoute>} /> {/* New route for EditSale */}
+        <Route path="/sales/:id" element={<PrivateRoute><EditSale /></PrivateRoute>} /> {/* Changed to EditSale */} 
         <Route path="/sales/customer/:customerId" element={<PrivateRoute><CustomerSales /></PrivateRoute>} />
         <Route path="/purchases" element={<PrivateRoute><Purchase /></PrivateRoute>} />
         <Route path="/returns" element={<PrivateRoute><Return /></PrivateRoute>} />
@@ -43,6 +46,7 @@ function App() {
         <Route path="/products/:id" element={<PrivateRoute><ProductJourney /></PrivateRoute>} />
         <Route path="/customers/:id" element={<PrivateRoute><CustomerJourney /></PrivateRoute>} />
         <Route path="/customer-sale-list/:name/:customerId" element={<PrivateRoute><CustomareSaleList /></PrivateRoute>} />
+        sales
       </Routes>
     </Router>
   );

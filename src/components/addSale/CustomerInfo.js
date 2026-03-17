@@ -32,6 +32,7 @@ const CustomerInfo = ({
   setDateFilter,
   setCustomerNotFound,
   handleOpenCustomerModal,
+  disabled
 }) => {
   return (
     <div className="bg-white p-4 rounded-lg shadow-md border border-gray-200">
@@ -72,6 +73,7 @@ const CustomerInfo = ({
               type="text"
               placeholder="Search for a customer..."
               value={customerSearch}
+              disabled={disabled}
               onChange={(e) => {
                 const keyword = e.target.value;
                 setCustomerSearch(keyword);

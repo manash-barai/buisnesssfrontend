@@ -6,7 +6,7 @@ import {
   deleteSaleById,
   updateSaleById
 } from '../features/sale/saleSlice';
-import { FaTrash, FaArrowRight, FaPlus, FaSearch, FaRedo, FaShoppingCart, FaCalendarAlt, FaUser, FaBoxOpen, FaBoxes, FaTags, FaCalculator, FaCheckCircle, FaExclamationCircle, FaUserCircle, FaCogs } from 'react-icons/fa';
+import { FaTrash, FaArrowRight, FaPlus, FaSearch, FaRedo, FaShoppingCart, FaCalendarAlt, FaUser, FaBoxOpen, FaBoxes, FaTags, FaCalculator, FaCheckCircle, FaExclamationCircle, FaUserCircle, FaCogs, FaEdit } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import DataTable from '../components/DataTable';
 
@@ -123,8 +123,9 @@ const Sale = () => {
   const handleSaleJourney = (saleId) => {
     navigate(`/sales/${saleId}/return`);
   }
-
-  console.log("saleList", saleList);
+  const handleEditSale = (saleId) => {
+    navigate(`/sales/edit/${saleId}`);
+  }
 
 
 
@@ -149,10 +150,10 @@ const Sale = () => {
           <ul className="list-disc list-inside">
             {value.map((item, i) => {
               console.log(item)
-             return <ol key={i}>
+              return <ol key={i}>
                 <span className="font-medium capitalize"> {item.product.name}</span>
               </ol>
-      })}
+            })}
           </ul>
         )
       },
@@ -247,7 +248,20 @@ const Sale = () => {
             </button>
           </div>
         ),
-        width: 120
+        width: 100
+      },
+      {
+        Header: () => <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}><FaEdit/> Edit</div>,
+        accessor: '_id',
+        Cell: ({ row }) => (
+          <div className="flex gap-3">
+
+            <button onClick={() => handleEditSale(row.original._id)} className="text-green-600 hover:text-green-800">
+              <FaEdit className="h-5 w-5 text-blue-700" />
+            </button>
+          </div>
+        ),
+
       }
     ],
     [products, handleSaleJourney]
@@ -330,7 +344,7 @@ const Sale = () => {
       </div>
 
       {/* Data Table */}
-      { error ? (
+      {error ? (
         <div className="text-center text-primary-600 py-8">Error: {error}</div>
       ) : (
         <>

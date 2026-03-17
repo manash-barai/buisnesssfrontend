@@ -1,17 +1,16 @@
-
-// src/pages/AddSale.js
+// src/pages/EditSale.js
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { useNavigate } from 'react-router-dom';
-import { createSale } from '../features/sale/saleSlice';
+import { useNavigate, useParams } from 'react-router-dom';
+import { getSaleById, updateSaleById } from '../features/sale/saleSlice';
 import { getAllCustomers, createCustomer } from '../features/customer/customerSlice';
 import { getAllProducts } from '../features/product/productSlice';
-import { FaPlus, FaFileInvoice } from 'react-icons/fa';
+import { FaPlus, FaFileInvoice, FaSpinner } from 'react-icons/fa';
 import axios from 'axios';
 import { debounce } from 'lodash';
 
-// Import the new components
+// Import components
 import CustomerInfo from '../components/addSale/CustomerInfo';
 import SaleItem from '../components/addSale/SaleItem';
 import Totals from '../components/addSale/Totals';
@@ -19,17 +18,15 @@ import DagImageUpload from '../components/addSale/DagImageUpload';
 import CustomerModal from '../components/CustomerModal';
 import SalePrintPage from '../components/Receipt';
 
-/**
- * This is the main page for adding a new sale.
- * It brings together all the smaller components and manages the overall state.
- */
-const AddSale = ({edit}) => {
+const EditSale = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const { id: saleId } = useParams();
 
-  // Get data from the Redux store
+  // Get data from Redux store
   const { data: customers = [] } = useSelector((state) => state.customer);
   const { data: products = [] } = useSelector((state) => state.product);
+  const { saleDetails, isLoading: saleLoading } = useSelector((state) => state.sale);
 
   // State for customer information
   const [customerId, setCustomerId] = useState('');
@@ -42,6 +39,7 @@ const AddSale = ({edit}) => {
   const [dateFilter, setDateFilter] = useState('');
   const [customerNotFound, setCustomerNotFound] = useState(false);
   const [notes, setNotes] = useState('');
+  
   // State for customer modal
   const [showCustomerModal, setShowCustomerModal] = useState(false);
   const [newCustomer, setNewCustomer] = useState({ name: '', phone: '', address: '', whatsApp: '' });
@@ -49,28 +47,7 @@ const AddSale = ({edit}) => {
   const [isClosing, setIsClosing] = useState(false);
 
   // State for sale items
-  const [saleItems, setSaleItems] = useState([
-    {
-      product: '',
-      productDetails: null,
-      lot: { _id: '', latNumber: '', supplier: '', pendingQuantity: 0 },
-      quantity: '',
-      unitPrice: '',
-      discount: '',
-      totalAmount: '',
-      paidOnline: '',
-      paidOffline: '',
-      dueAmount: '',
-      displayQuantity: '',
-      displayUnit: 'kg',
-      bagQuantity: '',
-      unitPriceMon: '',
-      unitPriceKG: '',
-      unitPriceBag: '',
-      unitPricePeti: '',
-      totalBags: ''
-    },
-  ]);
+  const [saleItems, setSaleItems] = useState([]);
 
   // State for totals and payment
   const [discountTotal, setDiscountTotal] = useState(0);
@@ -86,29 +63,147 @@ const AddSale = ({edit}) => {
   const [billData, setBillData] = useState(null);
   const [showReceipt, setShowReceipt] = useState(false);
 
-  // Fetch initial data (customers and products) when the component loads
+  // State for form submission
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Fetch initial data
   useEffect(() => {
     dispatch(getAllCustomers());
     dispatch(getAllProducts());
   }, [dispatch]);
 
-  // When a customer is selected, find their details and total due amount
+  // Fetch sale data when saleId changes
+  useEffect(() => {
+    if (saleId) {
+      dispatch(getSaleById(saleId));
+    }
+  }, [saleId, dispatch]);
+
+  // Populate form fields when selectedSale data is available
+  useEffect(() => {
+    if (saleDetails && products.length > 0) {
+      // Set customer information
+      const customer = saleDetails.customer;
+      setCustomerId(customer?._id || '');
+      setCustomerSearch(customer?.name || '');
+      setSelectedCustomer(customer || null);
+      setCustomerTotalDue(customer?.totalDue || 0);
+      setNotes(saleDetails.notes || '');
+      setDiscountTotal(saleDetails.discountTotal || 0);
+      
+      // Calculate total payment (paidAmount + discountTotal)
+      const paidAmount = saleDetails.paidAmount || 0;
+      const discount = saleDetails.discountTotal || 0;
+      setTotalPayment((paidAmount - discount).toString());
+      
+      setDagImage(saleDetails.dagImage || null);
+
+      // Map products to saleItems format
+      const mappedItems = saleDetails.products.map(item => {
+        const productDetails = products.find(p => p._id === item.product?._id) || item.product;
+        const unitCategory = productDetails?.unitCategory || 'KG';
+        
+        // Calculate display quantities based on unit category
+        let displayQuantity = '';
+        let bagQuantity = '';
+        let unitPriceMon = '';
+        let unitPriceKG = '';
+        let unitPriceBag = '';
+        let unitPricePeti = '';
+
+        const quantity = item.quantity || 0;
+        const unitPrice = item.unitPrice || 0;
+
+        if (unitCategory === 'KG') {
+          displayQuantity = (quantity / 40).toString();
+          unitPriceMon = (unitPrice * 40).toFixed(2);
+          unitPriceKG = unitPrice.toString();
+        } else if (unitCategory === 'bag') {
+          bagQuantity = quantity.toString();
+          unitPriceBag = unitPrice.toString();
+        } else if (unitCategory === 'tray') {
+          displayQuantity = (quantity / 7).toString();
+          unitPricePeti = unitPrice.toString();
+        }
+
+        return {
+          product: item.product?._id || '',
+          productDetails: productDetails,
+          lot: {
+            _id: item.latId?._id || '',
+            latNumber: item.latId?.latNumber || '',
+            supplier: item.latId?.supplier?.name || 'N/A',
+            pendingQuantity: item.latId?.pendingQuantity || 0,
+            pendingBags: item.latId?.pendingBag || 0
+          },
+          quantity: quantity.toString(),
+          unitPrice: unitPrice.toString(),
+          discount: item.discount?.toString() || '0',
+          totalAmount: item.totalAmount?.toString() || (quantity * unitPrice).toString(),
+          paidOnline: item.paidAmountOnline?.toString() || '0',
+          paidOffline: item.paidAmountOffline?.toString() || '0',
+          dueAmount: item.dueAmount?.toString() || (item.totalAmount - (item.paidAmountOnline || 0) - (item.paidAmountOffline || 0)).toString(),
+          displayQuantity: displayQuantity,
+          displayUnit: unitCategory === 'KG' ? 'kg' : unitCategory === 'bag' ? 'bag' : 'tray',
+          bagQuantity: bagQuantity,
+          unitPriceMon: unitPriceMon,
+          unitPriceKG: unitPriceKG,
+          unitPriceBag: unitPriceBag,
+          unitPricePeti: unitPricePeti,
+          totalBags: item.totalBag?.toString() || ''
+        };
+      });
+
+      setSaleItems(mappedItems);
+    }
+  }, [saleDetails, products]);
+
+  // When customer is selected, find their details
   useEffect(() => {
     if (customerId) {
       const customer = customers.find((c) => c._id === customerId);
       setSelectedCustomer(customer);
-      // In a real app, you might need to fetch this from the backend
       setCustomerTotalDue(customer?.totalDue || 0);
     }
   }, [customerId, customers]);
 
-  // Validate the new customer form
+  // Validate new customer form
   useEffect(() => {
     const { name, phone, address } = newCustomer;
     setIsFormValid(name.trim() !== '' && phone.trim() !== '' && address.trim() !== '');
   }, [newCustomer]);
 
-  // Handlers for the customer modal
+  // Handle payment distribution
+  useEffect(() => {
+    const payment = parseFloat(totalPayment) || 0;
+    const discount = parseFloat(discountTotal) || 0;
+    const effectivePayment = payment + discount;
+
+    let remainingPayment = effectivePayment;
+
+    const updatedSaleItems = saleItems.map(item => {
+      const newItem = { ...item };
+      const itemTotal = parseFloat(newItem.totalAmount) || 0;
+      const paidOnline = parseFloat(newItem.paidOnline) || 0;
+      const dueOnItem = itemTotal - paidOnline;
+
+      let paymentForItem = 0;
+      if (remainingPayment > 0 && dueOnItem > 0) {
+        paymentForItem = Math.min(remainingPayment, dueOnItem);
+        remainingPayment -= paymentForItem;
+      }
+
+      newItem.paidOffline = paymentForItem.toFixed(2);
+      newItem.dueAmount = (dueOnItem - paymentForItem).toFixed(2);
+      return newItem;
+    });
+
+    if (JSON.stringify(updatedSaleItems) !== JSON.stringify(saleItems)) {
+      setSaleItems(updatedSaleItems);
+    }
+  }, [totalPayment, discountTotal]);
+
+  // Customer modal handlers
   const handleOpenCustomerModal = () => {
     setNewCustomer({ name: '', phone: '', address: '', whatsApp: '' });
     setShowCustomerModal(true);
@@ -119,7 +214,7 @@ const AddSale = ({edit}) => {
     setTimeout(() => {
       setShowCustomerModal(false);
       setIsClosing(false);
-    }, 500); // Animation duration
+    }, 500);
   };
 
   const handleInputChange = (e) => {
@@ -132,7 +227,7 @@ const AddSale = ({edit}) => {
     const resultAction = await dispatch(createCustomer(newCustomer));
     if (createCustomer.fulfilled.match(resultAction)) {
       const newCustomerData = resultAction.payload;
-      dispatch(getAllCustomers()); // Refresh the customer list
+      dispatch(getAllCustomers());
       setCustomerId(newCustomerData._id);
       setSelectedCustomer(newCustomerData);
       setCustomerSearch(newCustomerData.name);
@@ -141,11 +236,7 @@ const AddSale = ({edit}) => {
     }
   };
 
-  /**
-   * This function is called whenever a field in a sale item is changed.
-   * It updates the state for that item and recalculates amounts.
-   */
-
+  // Sale item handlers
   const handleItemChangeBlur = (index, e) => {
     const { name, value } = e.target;
     if (name !== 'quantity') return;
@@ -156,7 +247,6 @@ const AddSale = ({edit}) => {
 
     let baseValue;
 
-    //  Check if "+" exists and sum the numbers
     if (value.includes("+")) {
       baseValue = value
         .split("+")
@@ -166,11 +256,9 @@ const AddSale = ({edit}) => {
       baseValue = parseFloat(value) || 0;
     }
 
-    // ✅ Limit by available quantity
     const available = item.lot?.pendingQuantity || Infinity;
     if (baseValue > available) baseValue = available;
 
-    // ✅ Update item values
     item.quantity = baseValue.toString();
 
     if (product?.unitCategory === 'KG') {
@@ -181,7 +269,6 @@ const AddSale = ({edit}) => {
       item.displayQuantity = (baseValue / 7).toString();
     }
 
-    // ✅ Calculate totals
     const quantity = parseFloat(item.quantity) || 0;
     const unitPrice = parseFloat(item.unitPrice) || 0;
     const discount = parseFloat(item.discount) || 0;
@@ -193,10 +280,10 @@ const AddSale = ({edit}) => {
     item.totalAmount = total.toFixed(2);
     item.dueAmount = due.toFixed(2);
 
-    // ✅ Update Notes
-    if (value.includes("+")) item.lot && item.lot.latNumber && setNotes(item.lot?.latNumber + " :- " + value);
+    if (value.includes("+") && item.lot?.latNumber) {
+      setNotes(item.lot.latNumber + " :- " + value);
+    }
 
-    // ✅ Update state
     items[index] = item;
     setSaleItems(items);
   };
@@ -224,6 +311,7 @@ const AddSale = ({edit}) => {
         displayQuantity: '',
         bagQuantity: '',
         unitPriceMon: '',
+        unitPriceKG: '',
         unitPriceBag: '',
         unitPricePeti: '',
         totalBags: ''
@@ -236,18 +324,13 @@ const AddSale = ({edit}) => {
     } else {
       const available = item.lot.pendingQuantity;
       let newQuantityInBase = parseFloat(item.quantity) || 0;
-
       const enteredValue = parseFloat(value) || 0;
 
       if (['quantity', 'displayQuantity', 'bagQuantity'].includes(name)) {
         let baseValue;
         if (name === 'quantity') {
-          let values = value;
-          baseValue = String(values);
-
-
+          baseValue = String(value);
         } else if (name === 'displayQuantity') {
-
           baseValue = product.unitCategory === 'tray' ? enteredValue * 7 : enteredValue * 40;
         } else if (name === 'bagQuantity') {
           baseValue = enteredValue / 50;
@@ -290,7 +373,6 @@ const AddSale = ({edit}) => {
           item.unitPrice = (priceValue).toFixed(2);
         } else if (name === 'unitPricePeti') {
           item.unitPrice = (priceValue).toFixed(2);
-
         } else if (name === 'unitPriceKG') {
           item.unitPrice = priceValue.toFixed(2);
           item.unitPriceMon = (priceValue * 40).toFixed(2);
@@ -314,9 +396,6 @@ const AddSale = ({edit}) => {
     setSaleItems(items);
   };
 
-  /**
-   * Adds a new, empty item to the sale.
-   */
   const handleAddItem = () => {
     setSaleItems([
       ...saleItems,
@@ -333,28 +412,21 @@ const AddSale = ({edit}) => {
     ]);
   };
 
-  /**
-   * Removes an item from the sale.
-   */
   const handleRemoveItem = (index) => {
     const items = [...saleItems];
     items.splice(index, 1);
     setSaleItems(items);
   };
 
-  /**
-   * This function is called when the product dropdown for an item is changed.
-   * It fetches the available lots for the selected product.
-   */
+  // Debounced lot fetch
   const debouncedLatChange = useCallback(
     debounce(async (index, value) => {
       const product = products.find((p) => p._id === value);
       if (!product) return;
-      
+
       try {
         const page = 1;
         const limit = 10;
-
         const getLatList = await axios.get(
           `${process.env.REACT_APP_BASE_URL}/api/lats?id=${product._id}&page=${page}&limit=${limit}`
         );
@@ -402,11 +474,11 @@ const AddSale = ({edit}) => {
       totalBags: ''
     };
 
-    if (product.unitCategory === 'KG') {
+    if (product?.unitCategory === 'KG') {
       items[index].displayUnit = 'kg';
-    } else if (product.unitCategory === 'bag') {
+    } else if (product?.unitCategory === 'bag') {
       items[index].displayUnit = 'bag';
-    } else if (product.unitCategory === 'tray') {
+    } else if (product?.unitCategory === 'tray') {
       items[index].displayUnit = 'tray';
     }
 
@@ -415,9 +487,6 @@ const AddSale = ({edit}) => {
     debouncedLatChange(index, value);
   };
 
-  /**
-   * This function is called when a lot is selected for an item.
-   */
   const handleLotClick = (lotId, index) => {
     const items = [...saleItems];
     const selectedLot = lastList.lat.find((lot) => lot._id === lotId);
@@ -448,9 +517,6 @@ const AddSale = ({edit}) => {
     setLastList({ index: null, lat: [] });
   };
 
-  /**
-   * Removes the selected lot from an item.
-   */
   const handleRemoveLot = (index) => {
     const items = [...saleItems];
     items[index].lot = { _id: '', latNumber: '', supplier: '', pendingQuantity: 0 };
@@ -466,39 +532,6 @@ const AddSale = ({edit}) => {
     setLastList({ index: null, lat: [] });
   };
 
-  useEffect(() => {
-    const payment = parseFloat(totalPayment) || 0;
-    const discount = parseFloat(discountTotal) || 0;
-    const effectivePayment = payment + discount;
-
-    let remainingPayment = effectivePayment;
-
-    const updatedSaleItems = saleItems.map(item => {
-      const newItem = { ...item };
-      const itemTotal = parseFloat(newItem.totalAmount) || 0;
-      const paidOnline = parseFloat(newItem.paidOnline) || 0;
-      const dueOnItem = itemTotal - paidOnline;
-
-      let paymentForItem = 0;
-      if (remainingPayment > 0 && dueOnItem > 0) {
-        paymentForItem = Math.min(remainingPayment, dueOnItem);
-        remainingPayment -= paymentForItem;
-      }
-
-      newItem.paidOffline = paymentForItem.toFixed(2);
-      newItem.dueAmount = (dueOnItem - paymentForItem).toFixed(2);
-      return newItem;
-    });
-
-    if (JSON.stringify(updatedSaleItems) !== JSON.stringify(saleItems)) {
-      setSaleItems(updatedSaleItems);
-    }
-  }, [totalPayment, discountTotal, saleItems]);
-
-  /**
-   * This function is called when the total payment amount is changed.
-   * It distributes the payment among the sale items.
-   */
   const handleTotalPaymentChange = (e) => {
     setTotalPayment(e.target.value);
   };
@@ -507,9 +540,6 @@ const AddSale = ({edit}) => {
     setDiscountTotal(e.target.value);
   };
 
-  /**
-   * This function is called when a DAG image is selected.
-   */
   const handleDagImageChange = (e) => {
     if (e.target.files && e.target.files[0]) {
       let reader = new FileReader();
@@ -520,16 +550,12 @@ const AddSale = ({edit}) => {
     }
   };
 
-  /**
-   * This function is called when the form is submitted.
-   * It gathers all the data and sends it to the backend to create a new sale.
-   */
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setIsSubmitting(true);
 
     let finalCustomerId = customerId;
 
-    // If a new customer was created, first save the customer to get their ID
     if (!customerId && selectedCustomer) {
       const resultAction = await dispatch(createCustomer({ name: selectedCustomer.name }));
       if (createCustomer.fulfilled.match(resultAction)) {
@@ -537,46 +563,43 @@ const AddSale = ({edit}) => {
       }
     }
 
-    // Prepare the data to be sent to the backend
+    // Prepare data according to backend structure
     const saleData = {
       customer: finalCustomerId,
+      saleDate: saleDetails?.saleDate || new Date().toISOString(),
       products: saleItems.map((item) => ({
         product: item.product,
         lot: item.lot._id,
         quantity: Number(item.quantity),
         Price_PerUnit: Number(item.unitPrice),
-        discount: Number(item.discount),
+        discount: Number(item.discount) || 0,
         totalAmount: Number(item.totalAmount),
-        paidAmountOnline: Number(item.paidOnline),
-        paidAmountOffline: Number(item.paidOffline),
+        paidAmountOnline: Number(item.paidOnline) || 0,
+        paidAmountOffline: Number(item.paidOffline) || 0,
         dueAmount: Number(item.dueAmount),
-        totalBags: Number(item.totalBags),
+        totalBags: Number(item.totalBags) || 0
       })),
       notes: notes,
-      saleDate: new Date().toISOString(),
-      createdBy: localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user'))._id : '',
       discountTotal: Number(discountTotal),
       totalAmount: saleItems.reduce((sum, item) => sum + parseFloat(item.totalAmount || 0), 0),
       dagImage: dagImage,
-      payment: totalPayment,
-      SaleDue: totalDue,
-      customerOldDue: customerTotalDue,
-      totalDue: finalTotalDue,
+      paidAmount: (parseFloat(totalPayment) || 0) + (parseFloat(discountTotal) || 0),
+      dueAmount: finalTotalDue,
+      customerOldDue: customerTotalDue
     };
 
-    // Dispatch the action to create the sale
-
-    const resultAction = await dispatch(createSale(saleData));
-    if (createSale.fulfilled.match(resultAction)) {
-      const newSale = resultAction.payload;
+    const resultAction = await dispatch(updateSaleById({ id: saleId, saleData }));
+    
+    if (updateSaleById.fulfilled.match(resultAction)) {
+      const updatedSale = resultAction.payload;
       const billData = {
-        billNo: newSale.billNo,
-        date: new Date(newSale.saleDate).toLocaleDateString(),
+        billNo: updatedSale.billNo || saleDetails?.billNo,
+        date: new Date(updatedSale.saleDate || saleDetails?.saleDate).toLocaleDateString(),
         customer: selectedCustomer?.name || 'N/A',
         items: saleItems.map(item => ({
           name: item.productDetails?.name || 'N/A',
           qty: item.quantity,
-          weight: item.quantity, // Or some other logic for weight
+          weight: item.quantity,
           rate: item.unitPrice,
           amount: item.totalAmount,
         })),
@@ -591,23 +614,29 @@ const AddSale = ({edit}) => {
       setBillData(billData);
       setShowReceipt(true);
     } else {
-      // Handle error case
-      console.error("Failed to create sale:", resultAction.error);
-      // Optionally, navigate back to sales page on failure too
-      // navigate('/sales');
+      console.error("Failed to update sale:", resultAction.error);
     }
+    
+    setIsSubmitting(false);
   };
 
-  // Calculate the grand total and total due amount for the entire sale
+  // Calculations
   const grandTotal = saleItems.reduce((sum, item) => sum + parseFloat(item.totalAmount || 0), 0);
   const totalDue = saleItems.reduce((sum, item) => sum + parseFloat(item.dueAmount || 0), 0);
-
   const totalPaidOnline = saleItems.reduce((sum, item) => sum + (parseFloat(item.paidOnline) || 0), 0);
   const saleDueBeforeOfflinePayment = grandTotal - totalPaidOnline;
   const effectivePayment = (parseFloat(totalPayment) || 0) + (parseFloat(discountTotal) || 0);
   const paymentAppliedToSale = saleDueBeforeOfflinePayment - totalDue;
   const extraPaymentForCustomer = effectivePayment - paymentAppliedToSale;
   const finalTotalDue = (customerTotalDue - extraPaymentForCustomer) + totalDue;
+
+  if (saleLoading) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <FaSpinner className="animate-spin text-4xl text-blue-600" />
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto p-2 max-w-full bg-gray-50 min-h-screen">
@@ -616,9 +645,10 @@ const AddSale = ({edit}) => {
           {/* Left Column */}
           <div className="lg:col-span-2 space-y-4">
             <div className="bg-white rounded-lg shadow-md p-4">
-              <h1 className="text-xl font-bold text-gray-800">Create a New Sale</h1>
-              <p className="text-sm text-gray-500">Fill in the details below to record a new sale.</p>
+              <h1 className="text-xl font-bold text-gray-800">Edit Sale</h1>
+              <p className="text-sm text-gray-500">Modify the details below to update the sale.</p>
             </div>
+            
             <div className="bg-white rounded-lg shadow-md p-4">
               <CustomerInfo
                 customers={customers}
@@ -640,8 +670,10 @@ const AddSale = ({edit}) => {
                 customerNotFound={customerNotFound}
                 setCustomerNotFound={setCustomerNotFound}
                 handleOpenCustomerModal={handleOpenCustomerModal}
+                disabled={true}
               />
             </div>
+
             <div className="bg-white rounded-lg shadow-md p-4">
               <div className="space-y-4">
                 {saleItems.map((item, index) => (
@@ -673,7 +705,7 @@ const AddSale = ({edit}) => {
             </div>
           </div>
 
-          {/* Right Column (Sticky) */}
+          {/* Right Column */}
           <div className="lg:col-span-1">
             <div className="sticky top-4 space-y-4">
               {saleItems.length >= 1 && (
@@ -689,28 +721,38 @@ const AddSale = ({edit}) => {
                   />
                 </div>
               )}
+              
               <div className="bg-white rounded-lg shadow-md p-4">
                 <DagImageUpload dagImage={dagImage} handleDagImageChange={handleDagImageChange} />
-
-                <div>
-                  <label>Notes</label>
-                  <textarea className='w-full border shadow-md rounded p-1 px-2 text-sm text-zinc-600' rows="6" placeholder='Notes' value={notes} onChange={(e) => setNotes(e.target.value)}  >   </textarea>
+                <div className="mt-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
+                  <textarea 
+                    className="w-full border shadow-md rounded p-1 px-2 text-sm text-zinc-600" 
+                    rows="4" 
+                    placeholder="Add notes here..." 
+                    value={notes} 
+                    onChange={(e) => setNotes(e.target.value)}
+                  />
                 </div>
               </div>
+
               <div className="bg-white rounded-lg shadow-md p-4">
                 <div className="flex justify-end gap-3">
                   <button
                     type="button"
                     onClick={() => navigate('/sales')}
                     className="bg-gray-200 text-gray-800 px-4 py-2 rounded-md hover:bg-gray-300 transition-all font-semibold text-sm"
+                    disabled={isSubmitting}
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
-                    className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-all font-semibold flex items-center gap-2 text-sm"
+                    disabled={isSubmitting}
+                    className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-all font-semibold flex items-center gap-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    <FaFileInvoice size={14} /> Save Sale
+                    {isSubmitting ? <FaSpinner className="animate-spin" /> : <FaFileInvoice size={14} />}
+                    {isSubmitting ? 'Updating...' : 'Update Sale'}
                   </button>
                 </div>
               </div>
@@ -729,19 +771,22 @@ const AddSale = ({edit}) => {
         isFormValid={isFormValid}
         isClosing={isClosing}
       />
+
       {showReceipt && billData && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-          <div className="bg-white p-4 rounded-lg">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-4 rounded-lg max-w-4xl max-h-[90vh] overflow-y-auto">
             <SalePrintPage billData={billData} />
-            <button
-              onClick={() => {
-                setShowReceipt(false);
-                navigate('/sales');
-              }}
-              className="mt-4 bg-gray-200 text-gray-800 px-4 py-2 rounded-md hover:bg-gray-300 transition-all font-semibold text-sm"
-            >
-              Close
-            </button>
+            <div className="flex justify-end mt-4">
+              <button
+                onClick={() => {
+                  setShowReceipt(false);
+                  navigate('/sales');
+                }}
+                className="bg-gray-200 text-gray-800 px-4 py-2 rounded-md hover:bg-gray-300 transition-all font-semibold text-sm"
+              >
+                Close
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -749,4 +794,4 @@ const AddSale = ({edit}) => {
   );
 };
 
-export default AddSale;
+export default EditSale;
