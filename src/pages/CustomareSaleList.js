@@ -44,7 +44,15 @@ const CustomerSaleList = () => {
 
     const handlePaymentSubmit = async (e) => {
         e.preventDefault();
-        if (!paymentAmount) return;
+
+        const finalPaymentAmount = Number(paymentAmount) || 0;
+        const finalRdAmount = Number(rdAmount) || 0;
+
+        if (finalPaymentAmount + finalRdAmount <= 0) {
+            // You could set an error state here to show a message in the UI
+            alert("The total payment (Amount + RD) must be greater than zero.");
+            return;
+        }
 
         // Construct Payload exactly as requested
         // 1️⃣ Grab the exact current time (e.g., "16:45:30.000Z")
@@ -56,20 +64,21 @@ const CustomerSaleList = () => {
         // 3️⃣ Create your payload with the new exact string
         const payload = {
             customer: customerId,
-            amount: Number(paymentAmount),
-            rd: Number(rdAmount),
+            amount: finalPaymentAmount,
+            rd: finalRdAmount,
             method: paymentMethod,
             paymentDate: exactDateTime, // 🔥 Changed this line!
             notes: paymentNotes
         };
-        dispatch(clearcustomareSaleLists())
+        console.log("payload", payload);
+        dispatch(clearcustomareSaleLists());
         try {
             // Passing customerId as the second arg if your mutation definition needs it for the URL 
             // Assuming your mutation is defined like: query: (data) => ({ url: `salePayment/${data.customer}`, method: 'POST', body: data })
             await salePayment(payload).unwrap();
-            await  dispatch(getCustomerSaleList({ customerId, page: 1, limit: 10 }));
+            await dispatch(getCustomerSaleList({ customerId, page: 1, limit: 10 }));
         } catch (err) {
-            console.error('Failed to make payment: ', err);
+            console.log('Failed to make payment: ', err);
         }
     };
 
@@ -198,7 +207,7 @@ const CustomerSaleList = () => {
                                                 onChange={(e) => setPaymentAmount(e.target.value)}
                                                 className="pl-8 w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-green-500 outline-none"
                                                 placeholder="0.00"
-                                                required
+                                                
                                             />
                                         </div>
                                     </div>
