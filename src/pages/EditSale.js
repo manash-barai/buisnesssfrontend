@@ -39,6 +39,7 @@ const EditSale = () => {
   const [dateFilter, setDateFilter] = useState('');
   const [customerNotFound, setCustomerNotFound] = useState(false);
   const [notes, setNotes] = useState('');
+  const [originalSaleDue, setOriginalSaleDue] = useState(0); // New state for original sale due
   
   // State for customer modal
   const [showCustomerModal, setShowCustomerModal] = useState(false);
@@ -90,6 +91,7 @@ const EditSale = () => {
       setCustomerTotalDue(customer?.totalDue || 0);
       setNotes(saleDetails.notes || '');
       setDiscountTotal(saleDetails.discountTotal || 0);
+      setOriginalSaleDue(saleDetails.dueAmount || 0); // Set original sale due
       
       // Calculate total payment (paidAmount + discountTotal)
       const paidAmount = saleDetails.paidAmount || 0;
@@ -256,8 +258,16 @@ const EditSale = () => {
       baseValue = parseFloat(value) || 0;
     }
 
-    const available = item.lot?.pendingQuantity || Infinity;
-    if (baseValue > available) baseValue = available;
+    const available = item.lot?.pendingQuantity || 0; // Default to 0 if not available
+
+    let increaseBy = 0;
+    if (baseValue > available) {
+      increaseBy = baseValue - available;
+      // The user mentioned "increase by 2 or 3". Assuming this means if the difference is 2 or 3, send that.
+      // If it's any other value, send that difference too.
+      // If a fixed value (e.g., always 2) is desired, this logic needs adjustment.
+    }
+    item.increaseBy = increaseBy > 0 ? increaseBy : undefined; // Only set if greater than 0
 
     item.quantity = baseValue.toString();
 
@@ -577,7 +587,8 @@ const EditSale = () => {
         paidAmountOnline: Number(item.paidOnline) || 0,
         paidAmountOffline: Number(item.paidOffline) || 0,
         dueAmount: Number(item.dueAmount),
-        totalBags: Number(item.totalBags) || 0
+        totalBags: Number(item.totalBags) || 0,
+        ...(item.increaseBy && { increaseBy: item.increaseBy }), // Conditionally add increaseBy
       })),
       notes: notes,
       discountTotal: Number(discountTotal),
@@ -585,7 +596,7 @@ const EditSale = () => {
       dagImage: dagImage,
       paidAmount: (parseFloat(totalPayment) || 0) + (parseFloat(discountTotal) || 0),
       dueAmount: finalTotalDue,
-      customerOldDue: customerTotalDue
+      customerOldDue: customerTotalDue - originalSaleDue
     };
 
     const resultAction = await dispatch(updateSaleById({ id: saleId, saleData }));
@@ -628,7 +639,15 @@ const EditSale = () => {
   const effectivePayment = (parseFloat(totalPayment) || 0) + (parseFloat(discountTotal) || 0);
   const paymentAppliedToSale = saleDueBeforeOfflinePayment - totalDue;
   const extraPaymentForCustomer = effectivePayment - paymentAppliedToSale;
-  const finalTotalDue = (customerTotalDue - extraPaymentForCustomer) + totalDue;
+
+  // Adjusted logic for finalTotalDue to avoid double-counting
+  const originalSaleTotalAmount = saleDetails?.totalAmount || 0;
+  const originalSalePaidAmount = saleDetails?.paidAmount || 0;
+  const originalSaleDueAmount = originalSaleTotalAmount - originalSalePaidAmount;
+
+  // customerTotalDue from state already includes the original sale's due.
+  // First, subtract the original sale's due, then add the new sale's due.
+  const finalTotalDue = (customerTotalDue - originalSaleDue) + totalDue;
 
   if (saleLoading) {
     return (
@@ -670,7 +689,7 @@ const EditSale = () => {
                 customerNotFound={customerNotFound}
                 setCustomerNotFound={setCustomerNotFound}
                 handleOpenCustomerModal={handleOpenCustomerModal}
-                disabled={true}
+                disabled={false}
               />
             </div>
 
@@ -690,6 +709,8 @@ const EditSale = () => {
                     handleLotClick={handleLotClick}
                     handleRemoveLot={handleRemoveLot}
                     handleRemoveItem={handleRemoveItem}
+                    disableProductSelection={true} // Disable product selection
+                    disabled={false} // Enable editing of sale item fields
                   />
                 ))}
               </div>

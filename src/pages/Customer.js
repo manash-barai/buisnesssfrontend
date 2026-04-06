@@ -5,7 +5,7 @@ import {
   createCustomer,
   updateCustomerById
 } from '../features/customer/customerSlice';
-import { FaEdit, FaPlus, FaUser, FaPhone, FaMapMarkerAlt, FaWhatsapp, FaMoneyBillWave, FaCalendarAlt, FaShoppingCart, FaBook, FaLongArrowAltRight } from 'react-icons/fa';
+import { FaEdit, FaPlus, FaUser, FaPhone, FaMapMarkerAlt, FaMoneyBillWave, FaShoppingCart, FaLongArrowAltRight } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import DataTable from '../components/DataTable';
 import CustomerModal from '../components/CustomerModal';
@@ -60,8 +60,6 @@ const Customer = () => {
     }
   };
 
-
-
   const handleUpdate = (customer) => {
     setCustomerUpdateId(customer._id);
     setNewCustomer({
@@ -88,21 +86,37 @@ const Customer = () => {
     }, 200);
   };
 
+  const handleCreateSaleForCustomer = (customer) => {
+    navigate(`/sales/new?cusid=${customer._id}`);
+  };
+
   const columns = React.useMemo(
     () => [
       { Header: <div className="flex items-center gap-2"><FaUser /> Name</div>, accessor: 'name', ThClass: "justify-start" },
       { Header: <div className="flex items-center gap-2"><FaPhone /> Phone</div>, accessor: 'phone', ThClass: "justify-start" },
-      { Header: <div className="flex items-center gap-2"><FaWhatsapp /> WA</div>, accessor: 'whatsApp', ThClass: "justify-start" },
       { Header: <div className="flex items-center gap-2"><FaMapMarkerAlt /> Address</div>, accessor: 'address', ThClass: "justify-start" },
-
-
       {
         Header: <div className="flex items-center gap-2"><FaMoneyBillWave />Total Due</div>,
         accessor: 'totalDue',
         ThClass: "justify-start",
         Cell: ({ value }) => value ? <b>₹{value}</b> : 'N/A'
       },
-
+      {
+        Header: 'Sale',
+        accessor: 'createSale',
+        ThClass: "justify-center",
+        Cell: ({ row }) => (
+          <div className="flex gap-2 justify-center">
+            <button
+              onClick={() => handleCreateSaleForCustomer(row.original)}
+              className="text-green-600 hover:text-green-800"
+              title="Create Sale"
+            >
+              <FaShoppingCart />
+            </button>
+          </div>
+        )
+      },
       {
         Header: 'Edit',
         accessor: 'Update',
@@ -128,7 +142,7 @@ const Customer = () => {
         ),
       }
     ],
-    [handleUpdate]
+    [handleUpdate, handleCreateSaleForCustomer, navigate]
   );
 
   const isFormValid = newCustomer.name && newCustomer.phone;

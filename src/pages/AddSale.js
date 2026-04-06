@@ -3,7 +3,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { createSale } from '../features/sale/saleSlice';
 import { getAllCustomers, createCustomer } from '../features/customer/customerSlice';
 import { getAllProducts } from '../features/product/productSlice';
@@ -26,6 +26,7 @@ import SalePrintPage from '../components/Receipt';
 const AddSale = ({edit}) => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const location = useLocation();
 
   // Get data from the Redux store
   const { data: customers = [] } = useSelector((state) => state.customer);
@@ -47,6 +48,15 @@ const AddSale = ({edit}) => {
   const [newCustomer, setNewCustomer] = useState({ name: '', phone: '', address: '', whatsApp: '' });
   const [isFormValid, setIsFormValid] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
+
+  // Effect to read customer ID from URL query parameter
+  useEffect(() => {
+    const queryParams = new URLSearchParams(location.search);
+    const cusid = queryParams.get('cusid');
+    if (cusid) {
+      setCustomerId(cusid);
+    }
+  }, [location.search]);
 
   // State for sale items
   const [saleItems, setSaleItems] = useState([

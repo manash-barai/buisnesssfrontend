@@ -1,44 +1,34 @@
-
 // src/components/addSale/SaleItem.js
 
 import React from 'react';
 import { FaTrash, FaTimes } from 'react-icons/fa';
 
-/**
- * This component represents a single item in the sale.
- * - It has a dropdown to select a product.
- * - It shows available lots for the selected product.
- * - You can enter the quantity and price.
- * - It calculates the total amount for the item.
- */
 const SaleItem = ({
-  // Data and state for this specific item
   item,
   index,
   products,
   lastList,
   saleItems,
-
-  // Functions to handle changes and actions
   handleItemChangeBlur,
   handleItemChange,
   handleProductChange,
   handleLotClick,
   handleRemoveLot,
   handleRemoveItem,
+  disableProductSelection = false, // New prop for disabling product selection
+  disabled = false, // Add disabled prop with a default value of false
 }) => {
 
-  
   return (
-    <div key={index} className="bg-white p-4 rounded-lg shadow-md border border-gray-200 relative">
+    <div key={index} className={`bg-white p-4 rounded-lg shadow-md border border-gray-200 relative ${disableProductSelection ? 'opacity-70' : ''}`}>
       <div className="flex justify-between items-start mb-3">
         <h3 className="text-md font-semibold text-gray-700">Item #{index + 1}</h3>
-        {/* Show a remove button if there is more than one item */}
         {saleItems.length > 1 && (
           <button
             type="button"
             onClick={() => handleRemoveItem(index)}
-            className="text-red-500 hover:text-red-700 transition-colors p-1 rounded-full hover:bg-red-50"
+            className="text-red-500 hover:text-red-700 transition-colors p-1 rounded-full hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={disableProductSelection}
           >
             <FaTrash size={14} />
           </button>
@@ -52,8 +42,9 @@ const SaleItem = ({
             name="product"
             value={item.product}
             onChange={(e) => handleProductChange(index, e)}
-            className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all text-sm"
+            className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all text-sm disabled:bg-gray-100"
             required
+            disabled={disableProductSelection}
           >
             {!item.product && <option value="">Select a product</option>}
             {products.map((product) => (
@@ -65,7 +56,6 @@ const SaleItem = ({
         </div>
       </div>
 
-      {/* This part shows the available lots for the selected product. */}
       {lastList.index === index && lastList.lat.length > 0 && (
         <div className="p-3 mb-3 bg-blue-50 rounded-md border border-blue-200">
           <label className="block text-sm font-medium text-gray-600 mb-2">Available Lots</label>
@@ -75,7 +65,8 @@ const SaleItem = ({
                 key={lot._id}
                 type="button"
                 onClick={() => handleLotClick(lot._id, index)}
-                className="p-2 border border-gray-300 rounded-md hover:border-blue-500 hover:bg-white text-left text-sm transition-all shadow-sm"
+                className="p-2 border border-gray-300 rounded-md hover:border-blue-500 hover:bg-white text-left text-sm transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={disabled}
               >
                 <div className="font-semibold text-gray-700">{lot.latNumber}</div>
                 <div className="text-xs text-gray-500 mt-1">{lot.supplier}</div>
@@ -89,7 +80,6 @@ const SaleItem = ({
         </div>
       )}
 
-      {/* This part shows the selected lot and the rest of the item form. */}
       {item.lot._id && (
         <div className="space-y-4">
           <div className="flex items-center justify-between gap-2 p-2 bg-green-50 rounded-md border border-green-200">
@@ -100,8 +90,6 @@ const SaleItem = ({
               <span className="ml-3 text-green-700">
                 Available: {item.lot.pendingQuantity} {item.productDetails?.unitCategory}
                 {" / "}
-
-                {/* KG */}
                 {item.productDetails?.unitCategory === "KG" && (
                   <>
                     {item.lot.pendingQuantity / 40} mon /{" "}
@@ -110,15 +98,11 @@ const SaleItem = ({
                     </span>
                   </>
                 )}
-
-                {/* bag */}
                 {item.productDetails?.unitCategory === "bag" && (
                   <span className="capitalize">
                     {item.lot.pendingQuantity * 50} kg
                   </span>
                 )}
-
-                {/* tray */}
                 {item.productDetails?.unitCategory === "tray" && (
                   <span className="capitalize">
                     {item.lot.pendingQuantity / 7} peti
@@ -130,15 +114,15 @@ const SaleItem = ({
             <button
               type="button"
               onClick={() => handleRemoveLot(index)}
-              className="text-red-500 hover:text-red-700 p-1 rounded-full hover:bg-red-50 transition-colors"
+              className="text-red-500 hover:text-red-700 p-1 rounded-full hover:bg-red-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               title="Remove lot"
+              disabled={disabled}
             >
               <FaTimes size={12} />
             </button>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-            {/* Different quantity inputs based on the product's unit category. */}
             {item.productDetails?.unitCategory === 'KG' && (
               <>
                 <div>
@@ -149,9 +133,10 @@ const SaleItem = ({
                     value={item.quantity}
                     onChange={(e) => handleItemChange(index, e)}
                     onBlur={(e) => handleItemChangeBlur(index, e)}
-                    className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                    className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm disabled:bg-gray-100"
                     required
                     step="0.1"
+                    disabled={disabled}
                   />
                 </div>
                 <div>
@@ -162,7 +147,8 @@ const SaleItem = ({
                       name="displayQuantity"
                       value={item.displayQuantity}
                       onChange={(e) => handleItemChange(index, e)}
-                      className="w-full p-2 border border-gray-300 rounded-l-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                      className="w-full p-2 border border-gray-300 rounded-l-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm disabled:bg-gray-100"
+                      disabled={disabled}
                     />
                     <span className="inline-flex items-center px-2 text-sm text-gray-600 bg-gray-100 border border-l-0 border-gray-300 rounded-r-md">
                       mon
@@ -176,7 +162,8 @@ const SaleItem = ({
                     name="totalBags"
                     value={item.totalBags}
                     onChange={(e) => handleItemChange(index, e)}
-                    className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                    className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm disabled:bg-gray-100"
+                    disabled={disabled}
                   />
                 </div>
               </>
@@ -192,13 +179,12 @@ const SaleItem = ({
                     name="quantity"
                     value={item.quantity}
                     onChange={(e) => {
-
                       if (/^\d*\.?\d*$/.test(e.target.value)) handleItemChange(index, e)
-
                     }}
-                    className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                    className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm disabled:bg-gray-100"
                     required
                     step="0.1"
+                    disabled={disabled}
                   />
                 </div>
                 <div>
@@ -212,8 +198,8 @@ const SaleItem = ({
                       onChange={(e) => {
                         if (/^\d*\.?\d*$/.test(e.target.value)) handleItemChange(index, e)
                       }}
-                      className="w-full p-2 border border-gray-300 rounded-l-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-
+                      className="w-full p-2 border border-gray-300 rounded-l-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm disabled:bg-gray-100"
+                      disabled={disabled}
                     />
                     <span className="inline-flex items-center px-2 text-sm text-gray-600 bg-gray-100 border border-l-0 border-gray-300 rounded-r-md">
                       bag
@@ -233,7 +219,8 @@ const SaleItem = ({
                       name="displayQuantity"
                       value={item.displayQuantity}
                       onChange={(e) => handleItemChange(index, e)}
-                      className="w-full p-2 border border-gray-300 rounded-l-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                      className="w-full p-2 border border-gray-300 rounded-l-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm disabled:bg-gray-100"
+                      disabled={disabled}
                     />
                     <span className="inline-flex items-center px-2 text-sm text-gray-600 bg-gray-100 border border-l-0 border-gray-300 rounded-r-md">
                       peti
@@ -247,15 +234,14 @@ const SaleItem = ({
                     name="quantity"
                     value={item.quantity}
                     onChange={(e) => handleItemChange(index, e)}
-                    className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                    className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm disabled:bg-gray-100"
                     required
+                    disabled={disabled}
                   />
                 </div>
-
               </>
             )}
 
-            {/* Different unit price inputs based on the product's unit category. */}
             {item.productDetails?.unitCategory === 'KG' && (
               <>
                 <div>
@@ -266,14 +252,12 @@ const SaleItem = ({
                     value={item.unitPriceMon}
                     onChange={(e) => {
                       const value = e.target.value;
-                      // Allow only numbers and decimal points
                       if (/^\d*\.?\d*$/.test(value)) {
                         handleItemChange(index, e);
                       }
                     }}
                     className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                   />
-
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-600 mb-1">Unit Price (KG)</label>
@@ -283,14 +267,12 @@ const SaleItem = ({
                     value={item.unitPriceKG}
                     onChange={(e) => {
                       const value = e.target.value;
-                      // Allow only numbers and decimal points
                       if (/^\d*\.?\d*$/.test(value)) {
                         handleItemChange(index, e);
                       }
                     }}
                     className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                   />
-
                 </div>
               </>
             )}
@@ -322,7 +304,6 @@ const SaleItem = ({
               </div>
             )}
 
-            {/* Display the calculated total amount and due amount for the item. */}
             <div className="p-2 rounded-md bg-gray-50 border border-gray-200 text-center">
               <label className="block text-xs font-medium text-gray-600 mb-1">Amount</label>
               <div className="font-bold text-md text-gray-800">₹ {item.totalAmount || '0.00'}</div>
