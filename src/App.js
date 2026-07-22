@@ -19,6 +19,7 @@ import CustomerSales from './pages/CustomerSales';
 import CustomareSaleList from './pages/CustomareSaleList';
 import ReturnSale from './pages/ReturnSale'; // Import the new component
 
+
 const PrivateRoute = ({ children }) => {
   const user = localStorage.getItem('user');
   return user ? <Layout>{children}</Layout> : <Navigate to="/login" />;
