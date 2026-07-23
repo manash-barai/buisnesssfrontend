@@ -20,6 +20,7 @@ import CustomareSaleList from './pages/CustomareSaleList';
 import ReturnSale from './pages/ReturnSale'; // Import the new component
 import Lat from './pages/Lat';
 
+
 const PrivateRoute = ({ children }) => {
   const user = localStorage.getItem('user');
   return user ? <Layout>{children}</Layout> : <Navigate to="/login" />;
