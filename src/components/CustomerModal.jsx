@@ -20,6 +20,7 @@ const CustomerModal = ({
   handleInputChange,
   isFormValid,
   isClosing,
+  editmode
 }) => {
   if (!showModal) {
     return null;
@@ -47,9 +48,9 @@ const CustomerModal = ({
         >
           {/* Header */}
           <div className="drag-handle cursor-move bg-primary-600 text-white flex justify-between items-center px-4 py-2 rounded-t-lg">
-            <h2 className="text-lg font-semibold">
+            {<h2 className="text-lg font-semibold">
               {newCustomer._id ? "Edit Customer" : "Add New Customer"}
-            </h2>
+            </h2>}
             <div className="flex gap-2">
               <button
                 onClick={handleCloseModal}

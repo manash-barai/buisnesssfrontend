@@ -347,6 +347,7 @@ const EditSale = () => {
         }
 
         if (baseValue > available) {
+          alert('out of stock increse quentity in your lat');
           baseValue = available;
         }
         newQuantityInBase = baseValue;
@@ -564,18 +565,9 @@ const EditSale = () => {
     e.preventDefault();
     setIsSubmitting(true);
 
-    let finalCustomerId = customerId;
-
-    if (!customerId && selectedCustomer) {
-      const resultAction = await dispatch(createCustomer({ name: selectedCustomer.name }));
-      if (createCustomer.fulfilled.match(resultAction)) {
-        finalCustomerId = resultAction.payload._id;
-      }
-    }
-
     // Prepare data according to backend structure
     const saleData = {
-      customer: finalCustomerId,
+      customer: customerId,
       saleDate: saleDetails?.saleDate || new Date().toISOString(),
       products: saleItems.map((item) => ({
         product: item.product,
@@ -599,34 +591,107 @@ const EditSale = () => {
       customerOldDue: customerTotalDue - originalSaleDue
     };
 
-    const resultAction = await dispatch(updateSaleById({ id: saleId, saleData }));
-    
-    if (updateSaleById.fulfilled.match(resultAction)) {
-      const updatedSale = resultAction.payload;
-      const billData = {
-        billNo: updatedSale.billNo || saleDetails?.billNo,
-        date: new Date(updatedSale.saleDate || saleDetails?.saleDate).toLocaleDateString(),
-        customer: selectedCustomer?.name || 'N/A',
-        items: saleItems.map(item => ({
-          name: item.productDetails?.name || 'N/A',
-          qty: item.quantity,
-          weight: item.quantity,
-          rate: item.unitPrice,
-          amount: item.totalAmount,
-        })),
-        total: grandTotal,
-        payment: totalPayment,
-        rd: discountTotal,
-        totalPayment: (parseFloat(totalPayment) || 0) + (parseFloat(discountTotal) || 0),
-        notes: notes,
-        customerTotalDue: customerTotalDue,
-        totalDue: finalTotalDue,
-      };
-      setBillData(billData);
-      setShowReceipt(true);
-    } else {
-      console.error("Failed to update sale:", resultAction.error);
+    // Find changes
+    const originalProducts = saleDetails.products.map(item => {
+        return {
+          product: item.product?._id || '',
+          lot: item.latId?._id || '',
+          quantity: Number(item.quantity),
+          Price_PerUnit: Number(item.unitPrice),
+          discount: Number(item.discount) || 0,
+          totalAmount: Number(item.totalAmount),
+          paidAmountOnline: Number(item.paidAmountOnline) || 0,
+          paidAmountOffline: Number(item.paidAmountOffline) || 0,
+          dueAmount: Number(item.dueAmount),
+          totalBags: Number(item.totalBag) || 0,
+        }
+    });
+
+    const changes = {};
+
+    if (saleData.notes !== saleDetails.notes) {
+      changes.notes = saleData.notes;
     }
+    if (saleData.discountTotal !== saleDetails.discountTotal) {
+      changes.discountTotal = saleData.discountTotal;
+    }
+    if (saleData.paidAmount !== saleDetails.paidAmount) {
+      changes.paidAmount = saleData.paidAmount;
+    }
+
+    const productChanges = [];
+    saleData.products.forEach((newProduct, index) => {
+      const oldProduct = originalProducts[index];
+      const productChange = {};
+      let hasChanges = false;
+
+      if (oldProduct) {
+        Object.keys(newProduct).forEach(key => {
+          if (newProduct[key] !== oldProduct[key]) {
+            productChange[key] = newProduct[key];
+            hasChanges = true;
+          }
+        });
+      } else {
+        // New product added
+        hasChanges = true;
+        Object.assign(productChange, newProduct);
+      }
+
+      if (hasChanges) {
+        productChanges.push({ 
+            product: newProduct.product, 
+            lat_id: newProduct.lot,
+            ...productChange
+        });
+      }
+    });
+
+    if (productChanges.length > 0) {
+      changes.products = productChanges;
+    }
+    
+    const finalChangesObject = {
+        _id: saleId,
+        previous: {
+            notes: saleDetails.notes,
+            discountTotal: saleDetails.discountTotal,
+            paidAmount: saleDetails.paidAmount,
+            products: originalProducts
+        },
+        new: changes
+    }
+    
+    console.log("Changed Items:", finalChangesObject);
+
+    // const resultAction = await dispatch(updateSaleById({ id: saleId, saleData }));
+    
+    // if (updateSaleById.fulfilled.match(resultAction)) {
+    //   const updatedSale = resultAction.payload;
+    //   const billData = {
+    //     billNo: updatedSale.billNo || saleDetails?.billNo,
+    //     date: new Date(updatedSale.saleDate || saleDetails?.saleDate).toLocaleDateString(),
+    //     customer: selectedCustomer?.name || 'N/A',
+    //     items: saleItems.map(item => ({
+    //       name: item.productDetails?.name || 'N/A',
+    //       qty: item.quantity,
+    //       weight: item.quantity,
+    //       rate: item.unitPrice,
+    //       amount: item.totalAmount,
+    //     })),
+    //     total: grandTotal,
+    //     payment: totalPayment,
+    //     rd: discountTotal,
+    //     totalPayment: (parseFloat(totalPayment) || 0) + (parseFloat(discountTotal) || 0),
+    //     notes: notes,
+    //     customerTotalDue: customerTotalDue,
+    //     totalDue: finalTotalDue,
+    //   };
+    //   setBillData(billData);
+    //   setShowReceipt(true);
+    // } else {
+    //   console.error("Failed to update sale:", resultAction.error);
+    // }
     
     setIsSubmitting(false);
   };
@@ -689,7 +754,7 @@ const EditSale = () => {
                 customerNotFound={customerNotFound}
                 setCustomerNotFound={setCustomerNotFound}
                 handleOpenCustomerModal={handleOpenCustomerModal}
-                disabled={false}
+                disabled={true}
               />
             </div>
 
@@ -714,7 +779,7 @@ const EditSale = () => {
                   />
                 ))}
               </div>
-              <div className="flex justify-start mt-4">
+              {/* <div className="flex justify-start mt-4">
                 <button
                   type="button"
                   onClick={handleAddItem}
@@ -722,14 +787,14 @@ const EditSale = () => {
                 >
                   <FaPlus size={12} /> Add Another Item
                 </button>
-              </div>
+              </div> */}
             </div>
           </div>
 
           {/* Right Column */}
           <div className="lg:col-span-1">
             <div className="sticky top-4 space-y-4">
-              {saleItems.length >= 1 && (
+              {/* {saleItems.length >= 1 && (
                 <div className="bg-white rounded-lg shadow-md p-4">
                   <Totals
                     discountTotal={discountTotal}
@@ -741,7 +806,7 @@ const EditSale = () => {
                     finalTotalDue={finalTotalDue}
                   />
                 </div>
-              )}
+              )} */}
               
               <div className="bg-white rounded-lg shadow-md p-4">
                 <DagImageUpload dagImage={dagImage} handleDagImageChange={handleDagImageChange} />
@@ -791,6 +856,7 @@ const EditSale = () => {
         handleInputChange={handleInputChange}
         isFormValid={isFormValid}
         isClosing={isClosing}
+        editmode={true}
       />
 
       {showReceipt && billData && (

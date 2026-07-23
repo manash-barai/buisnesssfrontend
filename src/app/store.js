@@ -8,6 +8,7 @@ import returnReducer from '../features/return/returnSlice';
 import saleReducer from '../features/sale/saleSlice';
 import supplierReducer from '../features/supplier/supplierSlice';
 import userReducer from '../features/user/userSlice';
+import latReducer from '../features/lat/latSlice';
 
 export const store = configureStore({
   reducer: {
@@ -21,6 +22,7 @@ export const store = configureStore({
     purchase: purchaseReducer,
     supplier: supplierReducer,
     user: userReducer,
+    lat: latReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware().concat(apiSlice.middleware),

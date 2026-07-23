@@ -82,6 +82,7 @@ const Navbar = () => {
             <li><NavLink to="/products" className="block px-4 py-2 text-gray-300 hover:bg-app-primary-700 hover:text-white" onClick={toggleMenu}>Products</NavLink></li>
             <li><NavLink to="/purchases" className="block px-4 py-2 text-gray-300 hover:bg-app-primary-700 hover:text-white" onClick={toggleMenu}>Purchases</NavLink></li>
             <li><NavLink to="/suppliers" className="block px-4 py-2 text-gray-300 hover:bg-app-primary-700 hover:text-white" onClick={toggleMenu}>Suppliers</NavLink></li>
+            <li><NavLink to="/lats" className="block px-4 py-2 text-gray-300 hover:bg-app-primary-700 hover:text-white" onClick={toggleMenu}>Lats</NavLink></li>
             <li><NavLink to="/users" className="block px-4 py-2 text-gray-300 hover:bg-app-primary-700 hover:text-white" onClick={toggleMenu}>Users</NavLink></li>
             <li><NavLink to="/activity-logs" className="block px-4 py-2 text-gray-300 hover:bg-app-primary-700 hover:text-white" onClick={toggleMenu}>Activity Logs</NavLink></li>
             <li>

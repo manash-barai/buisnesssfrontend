@@ -40,9 +40,9 @@ const CustomerInfo = ({
         <label className="block text-md font-semibold text-gray-700">
           Customer
         </label>
-        <button onClick={handleOpenCustomerModal} type='button' className='bg-blue-600 text-white shadow-sm px-3 py-1 rounded-md text-sm font-medium hover:bg-blue-700' >
+       {!disabled &&  <button onClick={handleOpenCustomerModal} type='button' className='bg-blue-600 text-white shadow-sm px-3 py-1 rounded-md text-sm font-medium hover:bg-blue-700' >
           New Customer
-        </button>
+        </button>}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
@@ -118,12 +118,12 @@ const CustomerInfo = ({
         {selectedCustomer && (
           <div className="p-3 bg-gray-100 rounded-md">
             <p className="text-md font-semibold">Total Due: {customerTotalDue}</p>
-            <button
+            {!disabled && <button
               onClick={() => setShowSalesHistory(!showSalesHistory)}
               className="text-blue-500 hover:underline mt-1 text-sm"
             >
               {showSalesHistory ? 'Hide' : 'More'}
-            </button>
+            </button>}
           </div>
         )}
       </div>
